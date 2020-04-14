@@ -1,3 +1,4 @@
+#git add Probabilities.R #git commit -m "Navn på ændring" #git push #git pull
 rm(list=ls())
 library(matlib)
 setwd("C:/Users/lucas/Desktop/Odd")
