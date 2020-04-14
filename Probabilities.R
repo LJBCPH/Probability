@@ -17,8 +17,7 @@ attach(data)
 aggregate(data$Hsejr,by=list(H=data$H),FUN=sum)
 #udesejre
 aggregate(data$Usejr,by=list(U=data$U),FUN=sum)
-
-#Victor er den største noob
+#git add #git commit -m "Navn på Ændring" #git push #git pull
 #Danner differentialerne
 #Funktion til at omdanne Power til a^b
 Power = function(a,b)a^b
