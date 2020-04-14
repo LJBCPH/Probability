@@ -1,6 +1,7 @@
 rm(list=ls())
 library(matlib)
 #Christoffer er fucking noob
+#Ja han er 
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
 data <- read.table("kampe_r.csv",header=T,sep=",")
