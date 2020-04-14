@@ -38,3 +38,19 @@ logl <- function(beta,theta,x){
 return(sum)
 }
 logl(beta,theta,x)
+i=1;j=1;sum=0;r=20;
+dldb <- function(beta,theta,x){
+  db=0;
+  for(i in 1:dim(x)[1]){
+    for(j in (i+1):(dim(x)[2])) {
+      db = db+ ((r-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
+          +(r-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
+          )*(x[,i]-x[,j])
+    }
+    
+  }
+  return(db)
+}
+dldb(beta,theta,x)#-7.809544e-06 -4.273634e-04 
+#Tænker det egentligt er fint, at dldb giver 0,0?
+#Det betyder vel bare at det givne data er ved et stationert punkt?
