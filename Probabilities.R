@@ -21,7 +21,6 @@ aggregate(data$Usejr,by=list(U=data$U),FUN=sum)
 #testværdier
 beta = c(1.6758,0.0269404)
 theta = 1.59384
-dx2x <- deriv(~ x^2, "x") ; 
 x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
 Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
 #Opskriver log-likelihoodfunktion
