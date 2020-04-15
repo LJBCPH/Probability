@@ -39,8 +39,9 @@ GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate
 GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
 x <- as.matrix(rbind(GnsMal,GnsTilskuer))
 #Danner Antal-kampe-vektoren (r)
-xtabs(data1$HU~H+U,data1)
-
+r <- xtabs(data1$Hsejr+data1$Usejr+data1$Uafgjort~H+U,data1)
+r <- as.data.frame.matrix(r)
+r <- r+t(r)
 #Danner loglikelihood funktionen
 #testværdier
 beta = c(1.6758,0.0269404)
@@ -48,14 +49,14 @@ theta = 1.59384
 x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
 Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
 #Opskriver log-likelihoodfunktion
-i=1;j=1;sum=0;r=6;
+i=1;j=1;sum=0;
 logl <- function(beta,theta,x){
   sum=0;
   for (i in 1:(dim(x)[2]-1)){
     for (j in (i+1):(dim(x)[2])){
       sum = sum +Y[i,j]*(t(x[,i])%*%beta-log(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))+
                  Y[j,i]*(t(x[,j])%*%beta-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))+
-                 (r-Y[i,j]-Y[j,i])*(log(theta^2-1)+t(x[,i])%*%beta+t(x[,j])%*%beta-log(exp(t(x[,i])%*%beta)+
+                 (r[i,j]-Y[i,j]-Y[j,i])*(log(theta^2-1)+t(x[,i])%*%beta+t(x[,j])%*%beta-log(exp(t(x[,i])%*%beta)+
                  theta*exp(t(x[,j])%*%beta))-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
     }
  }
@@ -64,7 +65,7 @@ return(sum)
 logl(beta,theta,x)
 
 #Definerer dldb til at være første afledte ift. beta
-i=1;j=1;sum=0;r=6;
+i=1;j=1;sum=0;
 sum = c(0,0)
 sum <- as.vector(sum)
 #db <- as.vector(db)
@@ -72,8 +73,8 @@ db <- function(beta,theta,x){
   sum = c(0,0);
   for(i in 1:(dim(x)[2]-1)){
     for(j in (i+1):dim(x)[2]) {
-      sum = sum + ((r-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
-          +(r-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
+      sum = sum + ((r[i,j]-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
+          +(r[i,j]-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
           )*(x[,i]-x[,j])
     }
   }
@@ -82,14 +83,14 @@ db <- function(beta,theta,x){
 db(beta,theta,x)#-7.809544e-06 -4.273634e-04 
 #Tænker det egentligt er fint, at dldb giver 0,0?
 #Det betyder vel bare at det givne data er ved et stationert punkt?
-i=1;j=1;sum=0;r=6;
+i=1;j=1;sum=0;
 dtheta <- function(beta,theta,x) {
   sum=0;
   for(i in 1:(dim(x)[2]-1)) {
     for(j in (i+1):dim(x)[2]) {
-      sum = sum + ((r-Y[i,j]-Y[j,i])*(2*theta/(theta^2-1))
-                + (r-Y[i,j])*(-(exp(t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))))
-                + (r-Y[j,i])*(-(exp(t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))))             
+      sum = sum + ((r[i,j]-Y[i,j]-Y[j,i])*(2*theta/(theta^2-1))
+                + (r[i,j]-Y[i,j])*(-(exp(t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))))
+                + (r[i,j]-Y[j,i])*(-(exp(t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))))             
       )                          
     }
   }
@@ -100,9 +101,9 @@ dtheta2 <- function(beta,theta,x) {
   sum=0;
   for(i in 1:(dim(x)[2]-1)) {
     for(j in (i+1):dim(x)[2]) {
-      sum = sum + ((r-Y[i,j]-Y[j,i])*(-(2*(theta^2+1))/(theta^2-1)^2)
-                +(r-Y[i,j])*(exp(2*t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)
-                +(r-Y[j,i])*(exp(2*t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2)
+      sum = sum + ((r[i,j]-Y[i,j]-Y[j,i])*(-(2*(theta^2+1))/(theta^2-1)^2)
+                +(r[i,j]-Y[i,j])*(exp(2*t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)
+                +(r[i,j]-Y[j,i])*(exp(2*t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2)
       )
     }
   }
@@ -113,8 +114,8 @@ db2 <- function(beta,theta,x){
   sum = 0;
   for(i in 1:(dim(x)[2]-1)){
     for(j in (i+1):dim(x)[2]) {
-      sum = sum + (as.numeric((((-(r-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)
-                -(r-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))
+      sum = sum + (as.numeric((((-(r[i,j]-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)
+                -(r[i,j]-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))
                 *(exp(t(x[,i])%*%beta+t(x[,j])%*%beta)*theta))*((x[,i]-x[,j])%*%t(x[,i]-x[,j]))
       )
     }
@@ -126,8 +127,8 @@ dbt <- function(beta,theta,x){
   sum = 0;
   for(i in 1:(dim(x)[2]-1)){
     for(j in (i+1):dim(x)[2]) {
-      sum = sum + ((as.numeric((-(r-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)+
-                  ((r-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))*
+      sum = sum + ((as.numeric((-(r[i,j]-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)+
+                  ((r[i,j]-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))*
                  (exp(t(x[,i])%*%beta+t(x[,j])%*%beta))*(x[,i]-x[,j]))
       )
       }
