@@ -42,17 +42,31 @@ i=1;j=1;sum=0;r=20;
 #Definerer dldb til at være første afledte ift. beta
 db = c(0,0)
 #db <- as.vector(db)
-dldb <- function(beta,theta,x){
-  db=c(0,0);
-  for(i in 1:dim(x)[1]){
-    for(j in (i+1):(dim(x)[2])) {
-      db = db+ ((r-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
-           +(r-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
-           )*(x[,i]-x[,j])
+db <- function(beta,theta,x){
+  sum=0;
+  for(i in 1:(dim(x)[2]-1)){
+    for(j in (i+1):dim(x)[2]) {
+      sum = sum + ((r-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
+          +(r-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
+          )*(x[,i]-x[,j])
     }
   }
-  return(db)
+  return(sum)
 }
-dldb(beta,theta,x)#-7.809544e-06 -4.273634e-04 
+db(beta,theta,x)#-7.809544e-06 -4.273634e-04 
 #Tænker det egentligt er fint, at dldb giver 0,0?
 #Det betyder vel bare at det givne data er ved et stationert punkt?
+i=1;j=1;sum=0;r=20;
+dtheta <- function(beta,theta,x) {
+  sum=0;
+  for(i in 1:(dim(x)[2]-1)) {
+    for(j in (i+1):dim(x)[2]) {
+      sum = sum + (r-Y[i,j]-Y[j,i])*(2*theta/(theta^2-1))
+                + (r-Y[i,j])*(-(exp(t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))))
+                + (r-Y[j,i])*(-(exp(t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))))             
+                                       
+    }
+  }
+  return(sum)
+}
+dtheta(beta,theta,x)
