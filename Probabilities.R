@@ -81,9 +81,19 @@ dtheta2 <- function(beta,theta,x) {
 }
 
 db2 <- function(beta,theta,x){
+  sum = 0;
   for(i in 1:(dim(x)[2]-1)){
     for(j in (i+1):dim(x)[2]) {
-      a = a+1
+      sum = sum + (as.numeric((((-(r-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)
+                -(r-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))
+                *(exp(t(x[,i])%*%beta+t(x[,j])%*%beta)*theta))*((x[,i]-x[,j])%*%t(x[,i]-x[,j]))
+      )
     }
   }
+  return(sum)
 }
+db2(beta,theta,x)
+(t(x[,2])%*%beta+t(x[,1])%*%beta)*theta
+(x[,1]-x[,2])%*%t(x[,1]-x[,2])
+
+as.numeric(((-(r-Y[1,2])/(theta*exp(t(x[,1])%*%beta)+exp(t(x[,2])%*%beta))^2)-(r-Y[2,1])/(exp(t(x[,1])%*%beta)+theta*exp(t(x[,2])%*%beta))^2)*(exp(t(x[,1])%*%beta+t(x[,2])%*%beta)*theta))
