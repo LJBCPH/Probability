@@ -38,12 +38,13 @@ logl <- function(beta,theta,x){
 return(sum)
 }
 logl(beta,theta,x)
-i=1;j=1;sum=0;r=20;
 #Definerer dldb til at være første afledte ift. beta
-db = c(0,0)
+i=1;j=1;sum=0;r=20;
+sum = c(0,0)
+sum <- as.vector(sum)
 #db <- as.vector(db)
 db <- function(beta,theta,x){
-  sum=0;
+  sum = c(0,0);
   for(i in 1:(dim(x)[2]-1)){
     for(j in (i+1):dim(x)[2]) {
       sum = sum + ((r-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
