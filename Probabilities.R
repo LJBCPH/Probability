@@ -62,10 +62,10 @@ dtheta <- function(beta,theta,x) {
   sum=0;
   for(i in 1:(dim(x)[2]-1)) {
     for(j in (i+1):dim(x)[2]) {
-      sum = sum + (r-Y[i,j]-Y[j,i])*(2*theta/(theta^2-1))
+      sum = sum + ((r-Y[i,j]-Y[j,i])*(2*theta/(theta^2-1))
                 + (r-Y[i,j])*(-(exp(t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))))
                 + (r-Y[j,i])*(-(exp(t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))))             
-                                       
+      )                          
     }
   }
   return(sum)
