@@ -33,6 +33,13 @@ samlet <- cbind.data.frame(hjemmesejre$HU,HUsejre)
 colnames(samlet)[1] <- "Hold"
 samlet <- separate(data=samlet,col=Hold,into=c("H1","H2"),sep=" ")
 Y <- xtabs(samlet$HUsejre~H1+H2,samlet)
+Y <- as.data.frame.matrix(Y)
+#Danner designmatricen
+GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])
+GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
+x <- as.matrix(rbind(GnsMal,GnsTilskuer))
+#Danner Antal-kampe-vektoren (r)
+xtabs(data1$HU~H+U,data1)
 
 #Danner loglikelihood funktionen
 #testværdier
@@ -41,7 +48,7 @@ theta = 1.59384
 x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
 Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
 #Opskriver log-likelihoodfunktion
-i=1;j=1;sum=0;r=20;
+i=1;j=1;sum=0;r=6;
 logl <- function(beta,theta,x){
   sum=0;
   for (i in 1:(dim(x)[2]-1)){
@@ -55,8 +62,9 @@ logl <- function(beta,theta,x){
 return(sum)
 }
 logl(beta,theta,x)
+
 #Definerer dldb til at være første afledte ift. beta
-i=1;j=1;sum=0;r=20;
+i=1;j=1;sum=0;r=6;
 sum = c(0,0)
 sum <- as.vector(sum)
 #db <- as.vector(db)
@@ -74,7 +82,7 @@ db <- function(beta,theta,x){
 db(beta,theta,x)#-7.809544e-06 -4.273634e-04 
 #Tænker det egentligt er fint, at dldb giver 0,0?
 #Det betyder vel bare at det givne data er ved et stationert punkt?
-i=1;j=1;sum=0;r=20;
+i=1;j=1;sum=0;r=6;
 dtheta <- function(beta,theta,x) {
   sum=0;
   for(i in 1:(dim(x)[2]-1)) {
@@ -144,3 +152,4 @@ val = sum(temp-ite);
 logl(beta,theta,x)
 counter = counter +1;
 }
+
