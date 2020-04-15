@@ -153,4 +153,3 @@ val = sum(temp-ite);
 logl(beta,theta,x)
 counter = counter +1;
 }
-
