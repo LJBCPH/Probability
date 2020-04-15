@@ -112,9 +112,9 @@ dbt <- function(beta,theta,x){
 }
 
 #iterationsvektoren:
-ite = as.matrix(c(rep(.1,dim(x)[1]),1.1));counter=0;
+ite = as.matrix(c(rep(.1,dim(x)[1]),1.1));counter=0;val=1;
 while(abs(val)>0.00001){
-beta = c(ite[1:(dim(x)[1])]);theta=c(ite[dim(x)[1]+1]);
+beta = c(ite[1:(dim(x)[1])]);theta=ite[dim(x)[1]+1];
 #Danner gradienten
 a12 = as.matrix(db(beta,theta,x));
 grad = rbind(a12,dtheta(beta,theta,x));
@@ -128,4 +128,3 @@ val = sum(temp-ite);
 logl(beta,theta,x)
 counter = counter +1;
 }
-
