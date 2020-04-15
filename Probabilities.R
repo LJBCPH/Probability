@@ -1,6 +1,7 @@
 #git add Probabilities.R #git commit -m "Navn på ændring" #git push #git pull
 rm(list=ls())
 library(matlib)
+library(blockmatrix)
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
 data <- read.table("kampe_r.csv",header=T,sep=",")
@@ -70,7 +71,7 @@ dtheta <- function(beta,theta,x) {
   }
   return(sum)
 }
-dtheta(beta,theta,x)
+
 dtheta2 <- function(beta,theta,x) {
   sum=0;
   for(i in 1:(dim(x)[2]-1)) {
@@ -83,7 +84,6 @@ dtheta2 <- function(beta,theta,x) {
   }
   return(sum)
 }
-dtheta2(beta,theta,x)
 
 db2 <- function(beta,theta,x){
   sum = 0;
@@ -97,4 +97,33 @@ db2 <- function(beta,theta,x){
   }
   return(sum)
 }
-db2(beta,theta,x)
+
+dbt <- function(beta,theta,x){
+  sum = 0;
+  for(i in 1:(dim(x)[2]-1)){
+    for(j in (i+1):dim(x)[2]) {
+      sum = sum + ((as.numeric((-(r-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)+
+                  ((r-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))*
+                 (exp(t(x[,i])%*%beta+t(x[,j])%*%beta))*(x[,i]-x[,j]))
+      )
+      }
+  }  
+  return(sum)
+}
+
+#iterationsvektoren:
+ite = as.matrix(c(rep(.1,dim(x)[2]-1),1.1));
+while(abs(val)>0.00001){
+beta = c(ite[1:(dim(x)[2]-1)]);theta=c(ite[dim(x)[2]]);
+#Danner gradienten
+a12 = as.matrix(db(beta,theta,x));
+grad = rbind(a12,dtheta(beta,theta,x));
+#Opsriver blokkene
+A = db2(beta,theta,x);B = as.matrix(dbt(beta,theta,x));C = t(as.matrix(dbt(beta,theta,x)));D = dtheta2(beta,theta,x);
+#Kombinderer blokkene til informationen
+inf = cbind(A,B);inf = rbind(inf,c(C,D));
+temp = ite;
+ite = ite - Inverse(inf)%*%grad*(1/2);
+val = sum(temp-ite);
+logl(beta,theta,x)
+}
