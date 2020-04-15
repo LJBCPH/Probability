@@ -98,7 +98,3 @@ db2 <- function(beta,theta,x){
   return(sum)
 }
 db2(beta,theta,x)
-(t(x[,2])%*%beta+t(x[,1])%*%beta)*theta
-(x[,1]-x[,2])%*%t(x[,1]-x[,2])
-
-as.numeric(((-(r-Y[1,2])/(theta*exp(t(x[,1])%*%beta)+exp(t(x[,2])%*%beta))^2)-(r-Y[2,1])/(exp(t(x[,1])%*%beta)+theta*exp(t(x[,2])%*%beta))^2)*(exp(t(x[,1])%*%beta+t(x[,2])%*%beta)*theta))
