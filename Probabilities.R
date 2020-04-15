@@ -1,7 +1,9 @@
 #git add Probabilities.R #git commit -m "Navn på ændring" #git push #git pull
 rm(list=ls())
-library(matlib)
-library(blockmatrix)
+library(matlib) #Til vektor/matrix regning
+library(blockmatrix) #matrixopsætning
+library(tidyr) #Til data transformation
+
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
 data <- read.table("kampe_r1.csv",header=T,sep=",")
@@ -20,6 +22,17 @@ attach(data1)
 aggregate(data1$Hsejr,by=list(H=data1$H),FUN=sum)
 #udesejre
 aggregate(data1$Usejr,by=list(U=data1$U),FUN=sum)
+#Samler strengen af hjemme mod ude
+data1$HU <- paste(data1$H,data1$U)
+#Udregner antal hjemmesejre og udesejre i kombinationerne
+hjemmesejre <- aggregate(data1$Hsejr, by = list(HU=data1$HU),FUN=sum);hjemmesejre <- hjemmesejre[order(hjemmesejre$HU),]
+udesejre <- aggregate(data1$Usejr, by = list(HU=data1$HU),FUN=sum);udesejre <- udesejre[order(udesejre$HU),]
+#Data fix
+HUsejre <- c(hjemmesejre$x+udesejre$x)
+samlet <- cbind.data.frame(hjemmesejre$HU,HUsejre)
+colnames(samlet)[1] <- "Hold"
+samlet <- separate(data=samlet,col=Hold,into=c("H1","H2"),sep=" ")
+Y <- xtabs(samlet$HUsejre~H1+H2,samlet)
 
 #Danner loglikelihood funktionen
 #testværdier
