@@ -113,7 +113,7 @@ dbt <- function(beta,theta,x){
 
 #iterationsvektoren:
 ite = as.matrix(c(rep(.1,dim(x)[1]),1.1));counter=0;val=1;
-while(abs(val)>0.00001){
+while(abs(val)>0.0000001){
 beta = c(ite[1:(dim(x)[1])]);theta=ite[dim(x)[1]+1];
 #Danner gradienten
 a12 = as.matrix(db(beta,theta,x));
