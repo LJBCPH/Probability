@@ -4,18 +4,22 @@ library(matlib)
 library(blockmatrix)
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
-data <- read.table("kampe_r.csv",header=T,sep=",")
+data <- read.table("kampe_r1.csv",header=T,sep=",")
 head(data)
 str(data)
 #fikser datatypes
 data$H <- as.character(data$H)
 data$U <- as.character(data$U)
-attach(data)
+data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
+#Henter 1.5 sæson ud:
+data1 <- data[which(data$dato>="2018-07-13"),]
+
+attach(data1)
 #sætter Y-kontingenstabellen op:
 #hjemmesejre
-aggregate(data$Hsejr,by=list(H=data$H),FUN=sum)
+aggregate(data1$Hsejr,by=list(H=data1$H),FUN=sum)
 #udesejre
-aggregate(data$Usejr,by=list(U=data$U),FUN=sum)
+aggregate(data1$Usejr,by=list(U=data1$U),FUN=sum)
 
 #Danner loglikelihood funktionen
 #testværdier
