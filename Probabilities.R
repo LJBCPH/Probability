@@ -79,3 +79,11 @@ dtheta2 <- function(beta,theta,x) {
   }
   return(sum)
 }
+
+db2 <- function(beta,theta,x){
+  for(i in 1:(dim(x)[2]-1)){
+    for(j in (i+1):dim(x)[2]) {
+      a = a+1
+    }
+  }
+}
