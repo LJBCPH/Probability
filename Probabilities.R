@@ -15,6 +15,7 @@ data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
 #Henter 1.5 sæson ud:
 data1 <- data[which(data$dato>="2018-07-13"),]
+#Finder holdene der er i Superligaen i indeværende sæson
 
 attach(data1)
 #sætter Y-kontingenstabellen op:
