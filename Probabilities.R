@@ -14,10 +14,10 @@ data$H <- as.character(data$H)
 data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
 #Henter 1.5 sæson ud:
-data1 <- data[which(data$dato>="2018-07-13"),]
+data1 <- data[which((data$dato>="2018-07-15") & (data$dato <= "2019-05-26")),]
 #Finder holdene der er i Superligaen i indeværende sæson
 dataUNan <- na.omit(data1)
-attach(data1)
+detach(data1)
 #sætter Y-kontingenstabellen op:
 #hjemmesejre
 aggregate(data1$Hsejr,by=list(H=data1$H),FUN=sum)
@@ -60,16 +60,18 @@ for (hold in 1:length(UnikHold)){
 }
 streak
 
-GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])
+GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])/2
 GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
-GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = mean)[,2])
-GnsSkud <- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),FUN = mean)[,2])
-GnsSkudIndenfor <- c(aggregate(dataUNan$skud_inderfor_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_inderfor_u, by = list(U = dataUNan$U),FUN = mean)[,2])
-GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = mean)[,2])
-GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])
+GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+GnsSkud <- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+GnsSkudIndenfor <- c(aggregate(dataUNan$skud_inderfor_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_inderfor_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+#TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64) 
 TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
 
-x <- as.matrix(rbind(GnsMal,GnsTilskuer,streak,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark,TeamRatings,GnsHjorne))
+x <- as.data.frame.matrix(rbind(GnsMal,GnsTilskuer,streak,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark,GnsHjorne))
+#x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
 #Danner Antal-kampe-vektoren (r)
 r <- xtabs(data1$Hsejr+data1$Usejr+data1$Uafgjort~H+U,data1)
 r <- as.data.frame.matrix(r)
@@ -80,8 +82,7 @@ r <- r+t(r)
 #theta = 1.59384
 #x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
 #Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
-#Opskriver log-likelihoodfunktion
-i=1;j=1;sum=0;
+#Opskriver log-likelihoodfunktion 
 logl <- function(beta,theta,x){
   sum=0;
   for (i in 1:(dim(x)[2]-1)){
@@ -97,16 +98,16 @@ return(sum)
 logl(beta,theta,x)
 
 #Definerer dldb til at være første afledte ift. beta
-i=1;j=1;sum=0;
-sum = c(0,0)
-sum <- as.vector(sum)
+#i=1;j=1;sum=0;
+#sum = c(0,0)
+#sum <- as.vector(sum)
 #db <- as.vector(db)
 db <- function(beta,theta,x){
-  sum = c(0,0);
+#  sum = c(0,0);
   for(i in 1:(dim(x)[2]-1)){
     for(j in (i+1):dim(x)[2]) {
-      sum = sum + ((r[i,j]-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
-          +(r[i,j]-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
+      sum = sum + (c(r[i,j]-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
+          +c(r[i,j]-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
           )*(x[,i]-x[,j])
     }
   }
@@ -169,7 +170,9 @@ dbt <- function(beta,theta,x){
 }
 
 #iterationsvektoren:
-ite = as.matrix(c(rep(.1,dim(x)[1]),1.1));counter=0;val=1;
+#Y = Y*100;r = r*100;
+#Y = Y/100;r = r/100;
+ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;
 while(abs(val)>0.0000001){
 beta = c(ite[1:(dim(x)[1])]);theta=ite[dim(x)[1]+1];
 #Danner gradienten
@@ -177,7 +180,7 @@ a12 = as.matrix(db(beta,theta,x));
 grad = rbind(a12,dtheta(beta,theta,x));
 #Opsriver blokkene
 A = db2(beta,theta,x);B = as.matrix(dbt(beta,theta,x));C = t(as.matrix(dbt(beta,theta,x)));D = dtheta2(beta,theta,x);
-#Kombinderer blokkene til informationen
+#Kombinerer blokkene til informationen
 inf = cbind(A,B);inf = rbind(inf,c(C,D));inf=-inf;
 temp = ite;
 ite = ite + Inverse(inf)%*%grad*(1/2);
@@ -187,3 +190,5 @@ counter = counter +1;
 }
 KV <- inv(inf)
 U <- sqrt(diag(KV));U
+c(beta,theta) - 1.96*U
+exp(t(x)%*%beta)
