@@ -5,6 +5,7 @@ library(blockmatrix) #matrixopsætning
 library(tidyr) #Til data transformation
 
 setwd("C:/Users/lucas/Desktop/Odd")
+setwd("C:/Users/Victo/Desktop/bachelor/kode")
 #Henter og verificerer data
 data <- read.table("kampe_r1.csv",header=T,sep=",")
 head(data)
@@ -147,10 +148,13 @@ grad = rbind(a12,dtheta(beta,theta,x));
 #Opsriver blokkene
 A = db2(beta,theta,x);B = as.matrix(dbt(beta,theta,x));C = t(as.matrix(dbt(beta,theta,x)));D = dtheta2(beta,theta,x);
 #Kombinderer blokkene til informationen
-inf = cbind(A,B);inf = rbind(inf,c(C,D));
+inf = cbind(A,B);inf = rbind(inf,c(C,D));inf=-inf;
 temp = ite;
-ite = ite - Inverse(inf)%*%grad*(1/2);
+ite = ite + Inverse(inf)%*%grad*(1/2);
 val = sum(temp-ite);
 logl(beta,theta,x)
 counter = counter +1;
 }
+#Usikkerheder:
+KV <- inv(inf);
+U <- sqrt(diag(KV));U
