@@ -45,10 +45,10 @@ r <- as.data.frame.matrix(r)
 r <- r+t(r)
 #Danner loglikelihood funktionen
 #testværdier
-beta = c(1.6758,0.0269404)
-theta = 1.59384
-x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
-Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
+#beta = c(1.6758,0.0269404)
+#theta = 1.59384
+#x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
+#Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
 #Opskriver log-likelihoodfunktion
 i=1;j=1;sum=0;
 logl <- function(beta,theta,x){
