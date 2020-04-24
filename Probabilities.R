@@ -16,7 +16,7 @@ data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
 #Henter 1.5 sæson ud:
 data1 <- data[which(data$dato>="2018-07-13"),]
 #Finder holdene der er i Superligaen i indeværende sæson
-data1 <- na.omit(data1)
+dataUNan <- na.omit(data1)
 attach(data1)
 #sætter Y-kontingenstabellen op:
 #hjemmesejre
@@ -62,12 +62,14 @@ streak
 
 GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])
 GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
-GnsBoldBes <- c(aggregate(data1$boldb_h, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$boldb_u, by = list(U = data1$U),FUN = mean)[,2])
-GnsSkud <- c(aggregate(data1$skud_h, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$skud_u, by = list(U = data1$U),FUN = mean)[,2])
-GnsSkudIndenfor <- c(aggregate(data1$skud_inderfor_h, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$skud_inderfor_u, by = list(U = data1$U),FUN = mean)[,2])
-GnsFrispark <- c(aggregate(data1$frispark_h, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$frispark_u, by = list(U = data1$U),FUN = mean)[,2])
+GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = mean)[,2])
+GnsSkud <- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),FUN = mean)[,2])
+GnsSkudIndenfor <- c(aggregate(dataUNan$skud_inderfor_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_inderfor_u, by = list(U = dataUNan$U),FUN = mean)[,2])
+GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = mean)[,2])
+GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])
+TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
 
-x <- as.matrix(rbind(GnsMal,GnsTilskuer,streak,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+x <- as.matrix(rbind(GnsMal,GnsTilskuer,streak,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark,TeamRatings,GnsHjorne))
 #Danner Antal-kampe-vektoren (r)
 r <- xtabs(data1$Hsejr+data1$Usejr+data1$Uafgjort~H+U,data1)
 r <- as.data.frame.matrix(r)
