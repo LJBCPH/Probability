@@ -35,48 +35,20 @@ colnames(samlet)[1] <- "Hold"
 samlet <- separate(data=samlet,col=Hold,into=c("H1","H2"),sep=" ")
 Y <- xtabs(samlet$HUsejre~H1+H2,samlet)
 Y <- as.data.frame.matrix(Y)
-UnikHold <- unique(data1$H)
-streak <- c(rep(1,length(UnikHold)))
-for (hold in 1:length(UnikHold)) {
-  SumStreak = 0
-  for (kamp in 1:length(data1$HM)) {
-    if (data1$H[kamp] == UnikHold[hold]) {
-      if (data1$HM[kamp] > data1$UM[kamp]){
-        SumStreak = SumStreak +1
-      } else if (data1$HM[kamp] == data1$UM[kamp]) {
-        SumStreak = SumStreak +1
-      } else {
-        SumStreak = 0
-      }
-    } else if (data1$U[kamp] == UnikHold[hold]) {
-      if (data1$HM[kamp] < data1$UM[kamp]){
-        SumStreak = SumStreak +1
-      } else if (data1$HM[kamp] == data1$UM[kamp]) {
-        SumStreak = SumStreak +1
-      } else {
-        SumStreak = 0
-      }
-    }
-  }
-  streak[hold] = SumStreak
-} 
-data1 = na.omit(data1[,16])
 #Danner designmatricen
 GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])
 GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
-GnsBoldBes <- c(aggregate(data1$boldb_h, by = list(H = data1$H),FUN = mean,na.action = na.omit)[,2]+aggregate(data1$boldb_u, by = list(U = data1$U),FUN = mean,na.action = na.omit)[,2])
-
-x <- as.matrix(rbind(GnsMal,GnsTilskuer,streak))
+x <- as.matrix(rbind(GnsMal,GnsTilskuer))
 #Danner Antal-kampe-vektoren (r)
 r <- xtabs(data1$Hsejr+data1$Usejr+data1$Uafgjort~H+U,data1)
 r <- as.data.frame.matrix(r)
 r <- r+t(r)
 #Danner loglikelihood funktionen
 #testværdier
-#beta = c(1.6758,0.0269404)
-#theta = 1.59384
-#x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
-#Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
+beta = c(1.6758,0.0269404)
+theta = 1.59384
+x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
+Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
 #Opskriver log-likelihoodfunktion
 i=1;j=1;sum=0;
 logl <- function(beta,theta,x){
@@ -182,4 +154,3 @@ val = sum(temp-ite);
 logl(beta,theta,x)
 counter = counter +1;
 }
-
