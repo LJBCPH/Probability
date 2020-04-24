@@ -5,7 +5,6 @@ library(blockmatrix) #matrixopsætning
 library(tidyr) #Til data transformation
 
 setwd("C:/Users/lucas/Desktop/Odd")
-setwd("C:/Users/Victo/Desktop/bachelor/kode")
 #Henter og verificerer data
 data <- read.table("kampe_r1.csv",header=T,sep=",")
 head(data)
@@ -37,6 +36,30 @@ samlet <- separate(data=samlet,col=Hold,into=c("H1","H2"),sep=" ")
 Y <- xtabs(samlet$HUsejre~H1+H2,samlet)
 Y <- as.data.frame.matrix(Y)
 #Danner designmatricen
+UnikHold <- unique(data1$H)
+streak <- c(rep(1,length(UnikHold)))
+#Danner ikke-tab-streak
+for (hold in 1:length(UnikHold)){
+  StreakSum = 0
+  for (kamp in 1:length(data1[,1])) {
+    if (data1$H[kamp] == UnikHold[hold]) {
+      if (data1$HM[kamp] >= data1$UM[kamp]){
+        StreakSum = StreakSum + 1
+      } else {
+        StreakSum = 0  
+        }
+    } else if (data1$U[kamp] == UnikHold[hold]) {
+      if (data1$HM[kamp] <= data1$UM[kamp]){
+        StreakSum = StreakSum + 1
+      } else {
+        StreakSum = 0  
+      }
+      }
+    }
+  streak[hold] = StreakSum
+}
+streak
+
 GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])
 GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
 x <- as.matrix(rbind(GnsMal,GnsTilskuer))
@@ -148,13 +171,10 @@ grad = rbind(a12,dtheta(beta,theta,x));
 #Opsriver blokkene
 A = db2(beta,theta,x);B = as.matrix(dbt(beta,theta,x));C = t(as.matrix(dbt(beta,theta,x)));D = dtheta2(beta,theta,x);
 #Kombinderer blokkene til informationen
-inf = cbind(A,B);inf = rbind(inf,c(C,D));inf=-inf;
+inf = cbind(A,B);inf = rbind(inf,c(C,D));
 temp = ite;
-ite = ite + Inverse(inf)%*%grad*(1/2);
+ite = ite - Inverse(inf)%*%grad*(1/2);
 val = sum(temp-ite);
 logl(beta,theta,x)
 counter = counter +1;
 }
-#Usikkerheder:
-KV <- inv(inf);
-U <- sqrt(diag(KV));U
