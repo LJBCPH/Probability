@@ -35,10 +35,38 @@ colnames(samlet)[1] <- "Hold"
 samlet <- separate(data=samlet,col=Hold,into=c("H1","H2"),sep=" ")
 Y <- xtabs(samlet$HUsejre~H1+H2,samlet)
 Y <- as.data.frame.matrix(Y)
+UnikHold <- unique(data1$H)
+streak <- c(rep(1,length(UnikHold)))
+for (hold in 1:length(UnikHold)) {
+  SumStreak = 0
+  for (kamp in 1:length(data1$HM)) {
+    if (data1$H[kamp] == UnikHold[hold]) {
+      if (data1$HM[kamp] > data1$UM[kamp]){
+        SumStreak = SumStreak +1
+      } else if (data1$HM[kamp] == data1$UM[kamp]) {
+        SumStreak = SumStreak +1
+      } else {
+        SumStreak = 0
+      }
+    } else if (data1$U[kamp] == UnikHold[hold]) {
+      if (data1$HM[kamp] < data1$UM[kamp]){
+        SumStreak = SumStreak +1
+      } else if (data1$HM[kamp] == data1$UM[kamp]) {
+        SumStreak = SumStreak +1
+      } else {
+        SumStreak = 0
+      }
+    }
+  }
+  streak[hold] = SumStreak
+} 
+data1 = na.omit(data1[,16])
 #Danner designmatricen
 GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])
 GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
-x <- as.matrix(rbind(GnsMal,GnsTilskuer))
+GnsBoldBes <- c(aggregate(data1$boldb_h, by = list(H = data1$H),FUN = mean,na.action = na.omit)[,2]+aggregate(data1$boldb_u, by = list(U = data1$U),FUN = mean,na.action = na.omit)[,2])
+
+x <- as.matrix(rbind(GnsMal,GnsTilskuer,streak))
 #Danner Antal-kampe-vektoren (r)
 r <- xtabs(data1$Hsejr+data1$Usejr+data1$Uafgjort~H+U,data1)
 r <- as.data.frame.matrix(r)
@@ -154,3 +182,4 @@ val = sum(temp-ite);
 logl(beta,theta,x)
 counter = counter +1;
 }
+
