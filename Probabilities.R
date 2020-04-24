@@ -172,7 +172,7 @@ dbt <- function(beta,theta,x){
 #iterationsvektoren:
 #Y = Y*100;r = r*100;
 #Y = Y/100;r = r/100;
-ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;
+ite = as.matrix(c(rep(0,dim(x)[1]),1.1));counter=0;val=1;
 while(abs(val)>0.0000001){
 beta = c(ite[1:(dim(x)[1])]);theta=ite[dim(x)[1]+1];
 #Danner gradienten
@@ -192,3 +192,19 @@ KV <- inv(inf)
 U <- sqrt(diag(KV));U
 c(beta,theta) - 1.96*U
 exp(t(x)%*%beta)
+
+#Sandsynlighederne
+ssh <- function(beta,theta,x,i,j){
+  VTU=0;
+      VTU = c((exp(t(x[,i])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))),
+            ((exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)*theta+exp(t(x[,j])%*%beta))),
+            ((exp(t(x[,i])%*%beta)*exp(t(x[,j])%*%beta)*(theta^2-1))/((exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))*(exp(t(x[,i])%*%beta)*theta+exp(t(x[,j])%*%beta))))
+        )
+  return(VTU)
+}
+
+#Kummulerede sandsynligheder
+r[1,6]*ssh(beta,theta,x,1,6)
+
+logl(beta,theta,x)
+pchisq(2*(-26356.95/-26509.27),8,lower = F)
