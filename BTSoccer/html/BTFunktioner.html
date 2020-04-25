@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: BTFunktioner</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for BTFunktioner {BTSoccer}"><tr><td>BTFunktioner {BTSoccer}</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>BTFunktioner
+
+</h2>
+
+<h3>Description</h3>
+
+<p>Laver likelihoodfunktion og differentialer
+
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+BTFunktioner(beta, theta, x)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>beta</code></td>
+<td>
+
+
+</td></tr>
+<tr valign="top"><td><code>theta</code></td>
+<td>
+
+
+</td></tr>
+<tr valign="top"><td><code>x</code></td>
+<td>
+
+
+</td></tr>
+</table>
+
+
+<h3>Examples</h3>
+
+<pre>
+##---- Should be DIRECTLY executable !! ----
+##-- ==&gt;  Define data, use random,
+##--	or do  help(data=index)  for the standard data sets.
+
+## The function is currently defined as
+function (beta, theta, x)
+{
+    logl &lt;- function(beta, theta, x) {
+        sum = 0
+        for (i in 1:(dim(x)[2] - 1)) {
+            for (j in (i + 1):(dim(x)[2])) {
+                sum = sum + Y[i, j] * (t(x[, i]) %*% beta - log(exp(t(x[,
+                  i]) %*% beta) + theta * exp(t(x[, j]) %*% beta))) +
+                  Y[j, i] * (t(x[, j]) %*% beta - log(exp(t(x[,
+                    j]) %*% beta) + theta * exp(t(x[, i]) %*%
+                    beta))) + (r[i, j] - Y[i, j] - Y[j, i]) *
+                  (log(theta^2 - 1) + t(x[, i]) %*% beta + t(x[,
+                    j]) %*% beta - log(exp(t(x[, i]) %*% beta) +
+                    theta * exp(t(x[, j]) %*% beta)) - log(exp(t(x[,
+                    j]) %*% beta) + theta * exp(t(x[, i]) %*%
+                    beta)))
+            }
+        }
+        return(sum)
+    }
+    db &lt;- function(beta, theta, x) {
+        sum = 0
+        for (i in 1:(dim(x)[2] - 1)) {
+            for (j in (i + 1):dim(x)[2]) {
+                sum = sum + (c(r[i, j] - Y[i, j]) * (-(theta *
+                  exp(t(x[, i]) %*% beta))/(exp(t(x[, j]) %*%
+                  beta) + theta * exp(t(x[, i]) %*% beta))) +
+                  c(r[i, j] - Y[j, i]) * ((theta * exp(t(x[,
+                    j]) %*% beta))/(exp(t(x[, i]) %*% beta) +
+                    theta * exp(t(x[, j]) %*% beta)))) * (x[,
+                  i] - x[, j])
+            }
+        }
+        return(sum)
+    }
+    dtheta &lt;- function(beta, theta, x) {
+        for (i in 1:(dim(x)[2] - 1)) {
+            for (j in (i + 1):dim(x)[2]) {
+                sum = sum + ((r[i, j] - Y[i, j] - Y[j, i]) *
+                  (2 * theta/(theta^2 - 1)) + (r[i, j] - Y[i,
+                  j]) * (-(exp(t(x[, i]) %*% beta)/(theta * exp(t(x[,
+                  i]) %*% beta) + exp(t(x[, j]) %*% beta)))) +
+                  (r[i, j] - Y[j, i]) * (-(exp(t(x[, j]) %*%
+                    beta)/(exp(t(x[, i]) %*% beta) + theta *
+                    exp(t(x[, j]) %*% beta)))))
+            }
+        }
+        return(sum)
+    }
+    dtheta2 &lt;- function(beta, theta, x) {
+        for (i in 1:(dim(x)[2] - 1)) {
+            for (j in (i + 1):dim(x)[2]) {
+                sum = sum + ((r[i, j] - Y[i, j] - Y[j, i]) *
+                  (-(2 * (theta^2 + 1))/(theta^2 - 1)^2) + (r[i,
+                  j] - Y[i, j]) * (exp(2 * t(x[, i]) %*% beta)/(theta *
+                  exp(t(x[, i]) %*% beta) + exp(t(x[, j]) %*%
+                  beta))^2) + (r[i, j] - Y[j, i]) * (exp(2 *
+                  t(x[, j]) %*% beta)/(exp(t(x[, i]) %*% beta) +
+                  theta * exp(t(x[, j]) %*% beta))^2))
+            }
+        }
+        return(sum)
+    }
+    db2 &lt;- function(beta, theta, x) {
+        for (i in 1:(dim(x)[2] - 1)) {
+            for (j in (i + 1):dim(x)[2]) {
+                sum = sum + (as.numeric((((-(r[i, j] - Y[i, j])/(theta *
+                  exp(t(x[, i]) %*% beta) + exp(t(x[, j]) %*%
+                  beta))^2) - (r[i, j] - Y[j, i])/(exp(t(x[,
+                  i]) %*% beta) + theta * exp(t(x[, j]) %*% beta))^2)) *
+                  (exp(t(x[, i]) %*% beta + t(x[, j]) %*% beta) *
+                    theta)) * ((x[, i] - x[, j]) %*% t(x[, i] -
+                  x[, j])))
+            }
+        }
+        return(sum)
+    }
+    dbt &lt;- function(beta, theta, x) {
+        for (i in 1:(dim(x)[2] - 1)) {
+            for (j in (i + 1):dim(x)[2]) {
+                sum = sum + ((as.numeric((-(r[i, j] - Y[i, j])/(theta *
+                  exp(t(x[, i]) %*% beta) + exp(t(x[, j]) %*%
+                  beta))^2) + ((r[i, j] - Y[j, i])/(exp(t(x[,
+                  i]) %*% beta) + theta * exp(t(x[, j]) %*% beta))^2)) *
+                  (exp(t(x[, i]) %*% beta + t(x[, j]) %*% beta)) *
+                  (x[, i] - x[, j])))
+            }
+        }
+        return(sum)
+    }
+    Funktions &lt;- list(loglike = logl, dlbeta = db, dltheta = dtheta,
+        dl2xtheta = dtheta2, dl2xbeta = db2, dlbetatheta = dbt)
+    return(Funktions)
+  }
+</pre>
+
+<hr /><div style="text-align: center;">[Package <em>BTSoccer</em> version 0.1.0 <a href="00Index.html">Index</a>]</div>
+</body></html>

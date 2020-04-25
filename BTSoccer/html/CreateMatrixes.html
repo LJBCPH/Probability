@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>R: CreateMatrixes</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body>
+
+<table width="100%" summary="page for CreateMatrixes {BTSoccer}"><tr><td>CreateMatrixes {BTSoccer}</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>CreateMatrixes
+
+</h2>
+
+<h3>Description</h3>
+
+<p>Laver Design, Kontingenstabel og samledekampe
+
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+CreateMatrixes(data, StartDate, EndDate, round)
+</pre>
+
+
+<h3>Arguments</h3>
+
+<table summary="R argblock">
+<tr valign="top"><td><code>data</code></td>
+<td>
+
+
+</td></tr>
+<tr valign="top"><td><code>StartDate</code></td>
+<td>
+
+
+</td></tr>
+<tr valign="top"><td><code>EndDate</code></td>
+<td>
+
+
+</td></tr>
+<tr valign="top"><td><code>round</code></td>
+<td>
+
+
+</td></tr>
+</table>
+
+
+<h3>Examples</h3>
+
+<pre>
+##---- Should be DIRECTLY executable !! ----
+##-- ==&gt;  Define data, use random,
+##--	or do  help(data=index)  for the standard data sets.
+
+## The function is currently defined as
+function (data, StartDate, EndDate, round)
+{
+    data$H &lt;- as.character(data$H)
+    data$U &lt;- as.character(data$U)
+    data$dato &lt;- as.Date(data$dato, format = "%m/%d/%Y")
+    data1 &lt;- data[which((data$dato &gt;= StartDate) &amp; (data$dato &lt;=
+        EndDate)), ]
+    dataUNan &lt;- na.omit(data1)
+    data1$HU &lt;- paste(data1$H, data1$U)
+    UnikSammenligner &lt;- unique(data1$HU)
+    hjemmesejre &lt;- aggregate(data1$Hsejr, by = list(HU = data1$HU),
+        FUN = sum)
+    hjemmesejre &lt;- hjemmesejre[order(hjemmesejre$HU), ]
+    udesejre &lt;- aggregate(data1$Usejr, by = list(HU = data1$HU),
+        FUN = sum)
+    udesejre &lt;- udesejre[order(udesejre$HU), ]
+    udesejre &lt;- separate(data = udesejre, col = HU, into = c("H1",
+        "H2"), sep = " ")
+    udesejre$HU &lt;- paste(udesejre$H2, udesejre$H1)
+    udesejre &lt;- udesejre[, 4:3]
+    udesejre &lt;- udesejre[order(udesejre$HU), ]
+    HUsejre &lt;- c(hjemmesejre$x + udesejre$x)
+    samlet &lt;- cbind.data.frame(hjemmesejre$HU, HUsejre)
+    colnames(samlet)[1] &lt;- "Hold"
+    samlet &lt;- separate(data = samlet, col = Hold, into = c("H1",
+        "H2"), sep = " ")
+    Y &lt;- xtabs(samlet$HUsejre ~ H1 + H2, samlet)
+    Y &lt;- as.data.frame.matrix(Y)
+    UnikHold &lt;- unique(data1$H)
+    UnikHold &lt;- sort(UnikHold)
+    streak &lt;- c(rep(1, length(UnikHold)))
+    for (hold in 1:length(UnikHold)) {
+        StreakSum = 0
+        for (kamp in 1:length(data1[, 1])) {
+            if (data1$H[kamp] == UnikHold[hold]) {
+                if (data1$HM[kamp] &gt;= data1$UM[kamp]) {
+                  StreakSum = StreakSum + 1
+                }
+                else {
+                  StreakSum = 0
+                }
+            }
+            else if (data1$U[kamp] == UnikHold[hold]) {
+                if (data1$HM[kamp] &lt;= data1$UM[kamp]) {
+                  StreakSum = StreakSum + 1
+                }
+                else {
+                  StreakSum = 0
+                }
+            }
+        }
+        streak[hold] = StreakSum
+    }
+    GnsMal &lt;- c(aggregate(data1$HM, by = list(H = data1$H), FUN = mean)[,
+        2] + aggregate(data1$UM, by = list(U = data1$U), FUN = mean)[,
+        2])/2
+    GnsMalInd &lt;- c(aggregate(data1$UM, by = list(H = data1$H),
+        FUN = mean)[, 2] + aggregate(data1$HM, by = list(U = data1$U),
+        FUN = mean)[, 2])/2
+    GnsTilskuer &lt;- c(aggregate(data1$Tilskuere, by = list(H = data1$H),
+        FUN = mean)[, 2] + aggregate(data1$Tilskuere, by = list(U = data1$U),
+        FUN = mean)[, 2])/1000
+    GnsBoldBes &lt;- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),
+        FUN = mean)[, 2] + aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),
+        FUN = mean)[, 2])
+    GnsSkud &lt;- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),
+        FUN = mean)[, 2] + aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),
+        FUN = mean)[, 2])/2
+    GnsSkudIndenfor &lt;- c(aggregate(dataUNan$skud_inderfor_h,
+        by = list(H = dataUNan$H), FUN = mean)[, 2] + aggregate(dataUNan$skud_inderfor_u,
+        by = list(U = dataUNan$U), FUN = mean)[, 2])/2
+    GnsFrispark &lt;- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),
+        FUN = mean)[, 2] + aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),
+        FUN = mean)[, 2])/2
+    GnsHjorne &lt;- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),
+        FUN = mean)[, 2] + aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),
+        FUN = mean)[, 2])/2
+    x &lt;- as.data.frame.matrix(rbind(streak, GnsHjorne, GnsMal,
+        GnsMalInd, GnsTilskuer, GnsBoldBes, GnsSkud, GnsSkudIndenfor,
+        GnsFrispark))
+    r &lt;- xtabs(data1$Hsejr + data1$Usejr + data1$Uafgjort ~ H +
+        U, data1)
+    r &lt;- as.data.frame.matrix(r)
+    r &lt;- r + t(r)
+    Matrixes &lt;- list(DesignMatrix = x, KontingensTabel = Y, SamledeKampe = r)
+    return(Matrixes)
+  }
+</pre>
+
+<hr /><div style="text-align: center;">[Package <em>BTSoccer</em> version 0.1.0 <a href="00Index.html">Index</a>]</div>
+</body></html>
