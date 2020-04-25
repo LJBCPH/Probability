@@ -14,7 +14,7 @@ data$H <- as.character(data$H)
 data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
 #Henter 1.5 sæson ud:
-data1 <- data[which((data$dato>="2018-07-15") & (data$dato <= "2019-05-26")),]
+data1 <- data[which((data$dato>="2018-07-13") & (data$dato <= "2019-05-26")),]
 #Finder holdene der er i Superligaen i indeværende sæson
 dataUNan <- na.omit(data1)
 detach(data1)
@@ -25,10 +25,13 @@ aggregate(data1$Hsejr,by=list(H=data1$H),FUN=sum)
 aggregate(data1$Usejr,by=list(U=data1$U),FUN=sum)
 #Samler strengen af hjemme mod ude
 data1$HU <- paste(data1$H,data1$U)
+UnikSammenligner <- unique(data1$HU)
 #Udregner antal hjemmesejre og udesejre i kombinationerne
 hjemmesejre <- aggregate(data1$Hsejr, by = list(HU=data1$HU),FUN=sum);hjemmesejre <- hjemmesejre[order(hjemmesejre$HU),]
 udesejre <- aggregate(data1$Usejr, by = list(HU=data1$HU),FUN=sum);udesejre <- udesejre[order(udesejre$HU),]
 #Data fix
+udesejre <- separate(data=udesejre,col=HU,into=c("H1","H2"),sep=" ")
+udesejre$HU <- paste(udesejre$H2,udesejre$H1);udesejre <- udesejre[,4:3];udesejre <- udesejre[order(udesejre$HU),]
 HUsejre <- c(hjemmesejre$x+udesejre$x)
 samlet <- cbind.data.frame(hjemmesejre$HU,HUsejre)
 colnames(samlet)[1] <- "Hold"
@@ -61,16 +64,21 @@ for (hold in 1:length(UnikHold)){
 streak
 
 GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])/2
+GnsMalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = mean)[,2])/2
 GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
-GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = mean)[,2])
 GnsSkud <- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
 GnsSkudIndenfor <- c(aggregate(dataUNan$skud_inderfor_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_inderfor_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
 GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
 GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
-#TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64) 
-TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-
-x <- as.data.frame.matrix(rbind(GnsMal,GnsTilskuer,streak,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark,GnsHjorne))
+#TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
+TeamRatings <- c(66,63,65,68,64,71,70,66,63,67,64,64,64,64)-63
+hist(data1$skud_h) 
+hist(exp(TeamRatings),breaks = 10)
+hist(TeamRatings,breaks=10)
+GnsMal <- log(GnsMal); GnsBoldBes <- log(GnsBoldBes); GnsSkud <- GnsSkud;GnsSkudIndenfor <- GnsSkudIndenfor
+GnsFrispark <- GnsFrispark; GnsHjorne <- log(GnsHjorne); GnsTilskuer <- log(GnsTilskuer)
+x <- as.data.frame.matrix(rbind(GnsHjorne,GnsMal/GnsMalInd,TeamRatings,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
 #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
 #Danner Antal-kampe-vektoren (r)
 r <- xtabs(data1$Hsejr+data1$Usejr+data1$Uafgjort~H+U,data1)
@@ -83,6 +91,7 @@ r <- r+t(r)
 #x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
 #Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
 #Opskriver log-likelihoodfunktion 
+
 logl <- function(beta,theta,x){
   sum=0;
   for (i in 1:(dim(x)[2]-1)){
@@ -96,7 +105,6 @@ logl <- function(beta,theta,x){
 return(sum)
 }
 logl(beta,theta,x)
-
 #Definerer dldb til at være første afledte ift. beta
 #i=1;j=1;sum=0;
 #sum = c(0,0)
@@ -191,7 +199,12 @@ counter = counter +1;
 KV <- inv(inf)
 U <- sqrt(diag(KV));U
 c(beta,theta) - 1.96*U
-exp(t(x)%*%beta)
+sort(exp(t(x)%*%beta))
+styrker <- exp(t(x)%*%beta)
+names(x) <- names(Y)
+
+#LRT
+pchisq(2*(244.5442-269.5121),8,lower = F)
 
 #Sandsynlighederne
 ssh <- function(beta,theta,x,i,j){
@@ -206,5 +219,3 @@ ssh <- function(beta,theta,x,i,j){
 #Kummulerede sandsynligheder
 r[1,6]*ssh(beta,theta,x,1,6)
 
-logl(beta,theta,x)
-pchisq(2*(-26356.95/-26509.27),8,lower = F)
