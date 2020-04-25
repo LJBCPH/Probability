@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1587832160581.000,
+    "dirty" : false,
+    "encoding" : "ISO8859-1",
+    "folds" : "",
+    "hash" : "2478452293",
+    "id" : "62AB9F3F",
+    "lastKnownWriteTime" : 1587832795,
+    "last_content_update" : -2147483648,
+    "path" : "~/GitHub/Probability/Probability/Probabilities.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "13,23",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
