@@ -3,10 +3,15 @@ rm(list=ls())
 library(matlib) #Til vektor/matrix regning
 library(blockmatrix) #matrixopsætning
 library(tidyr) #Til data transformation
-
+library(BTSoccer)
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
 data <- read.table("kampe_r1.csv",header=T,sep=",")
+m <- CreateMatrixes(data,"2019-01-01","2019-12-12",0)
+x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
+f <- BTFunktioner(beta,theta,x)
+n <- NR(x,f)
+f$dltheta(beta,theta,x)
 head(data)
 str(data)
 #fikser datatypes
@@ -46,13 +51,13 @@ for (hold in 1:length(UnikHold)){
       if (data1$HM[kamp] >= data1$UM[kamp]){
         StreakSum = StreakSum + 1
       } else {
-        StreakSum = 0  
+        StreakSum = 0
         }
     } else if (data1$U[kamp] == UnikHold[hold]) {
       if (data1$HM[kamp] <= data1$UM[kamp]){
         StreakSum = StreakSum + 1
       } else {
-        StreakSum = 0  
+        StreakSum = 0
       }
       }
     }
@@ -82,7 +87,7 @@ r <- r+t(r)
 #theta = 1.59384
 #x <- cbind(c(0.23,4),c(0.67,29),c(0.51,7))
 #Y <- cbind(c(0,13,12),c(3,0,3),c(5,13,0))
-#Opskriver log-likelihoodfunktion 
+#Opskriver log-likelihoodfunktion
 
 logl <- function(beta,theta,x){
   sum=0;
@@ -113,7 +118,7 @@ db <- function(beta,theta,x){
   }
   return(sum)
 }
-db(beta,theta,x)#-7.809544e-06 -4.273634e-04 
+db(beta,theta,x)#-7.809544e-06 -4.273634e-04
 #Tænker det egentligt er fint, at dldb giver 0,0?
 #Det betyder vel bare at det givne data er ved et stationert punkt?
 i=1;j=1;sum=0;
@@ -123,8 +128,8 @@ dtheta <- function(beta,theta,x) {
     for(j in (i+1):dim(x)[2]) {
       sum = sum + ((r[i,j]-Y[i,j]-Y[j,i])*(2*theta/(theta^2-1))
                 + (r[i,j]-Y[i,j])*(-(exp(t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))))
-                + (r[i,j]-Y[j,i])*(-(exp(t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))))             
-      )                          
+                + (r[i,j]-Y[j,i])*(-(exp(t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))))
+      )
     }
   }
   return(sum)
@@ -165,7 +170,7 @@ dbt <- function(beta,theta,x){
                  (exp(t(x[,i])%*%beta+t(x[,j])%*%beta))*(x[,i]-x[,j]))
       )
       }
-  }  
+  }
   return(sum)
 }
 
@@ -252,13 +257,13 @@ for (hold in 1:length(UnikHold)){
       if (data1$HM[kamp] >= data1$UM[kamp]){
         StreakSum = StreakSum + 1
       } else {
-        StreakSum = 0  
+        StreakSum = 0
       }
     } else if (data1$U[kamp] == UnikHold[hold]) {
       if (data1$HM[kamp] <= data1$UM[kamp]){
         StreakSum = StreakSum + 1
       } else {
-        StreakSum = 0  
+        StreakSum = 0
       }
     }
   }
@@ -312,7 +317,7 @@ data1$HU <- paste(data1$H,data1$U)
 KumSSH <- KumSSH[KumSSH$H1H2 %in% data1$HU,];
 
 Observationer <- as.data.frame.matrix(cbind(data1$Hsejr,data1$Usejr,data1$Uafgjort,data1$HU));
-Observationer <- Observationer[order(Observationer$V4),];Observationer[,1] <- as.numeric(paste(Observationer[,1]));Observationer[,2] <- as.numeric(paste(Observationer[,2]));Observationer[,3] <- as.numeric(paste(Observationer[,3])); 
+Observationer <- Observationer[order(Observationer$V4),];Observationer[,1] <- as.numeric(paste(Observationer[,1]));Observationer[,2] <- as.numeric(paste(Observationer[,2]));Observationer[,3] <- as.numeric(paste(Observationer[,3]));
 Fejl[round-9] = sum(Observationer[,1:3]-(KumSSH[,1:3]*Observationer[,1:3]))
 
 }
