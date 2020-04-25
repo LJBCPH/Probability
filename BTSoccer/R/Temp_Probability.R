@@ -100,8 +100,8 @@ BTFunktioner <- function(beta,theta,x) {
     return(sum)
     }
     dtheta <- function(beta,theta,x) {
+      sum = 0;
     for(i in 1:(dim(x)[2]-1)) {
-        sum = 0;
         for(j in (i+1):dim(x)[2]) {
         sum = sum + ((r[i,j]-Y[i,j]-Y[j,i])*(2*theta/(theta^2-1))
                      + (r[i,j]-Y[i,j])*(-(exp(t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))))
@@ -113,9 +113,9 @@ BTFunktioner <- function(beta,theta,x) {
     }
 
     dtheta2 <- function(beta,theta,x) {
+      sum = 0;
     for(i in 1:(dim(x)[2]-1)) {
       for(j in (i+1):dim(x)[2]) {
-        sum = 0;
         sum = sum + ((r[i,j]-Y[i,j]-Y[j,i])*(-(2*(theta^2+1))/(theta^2-1)^2)
                      +(r[i,j]-Y[i,j])*(exp(2*t(x[,i])%*%beta)/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)
                      +(r[i,j]-Y[j,i])*(exp(2*t(x[,j])%*%beta)/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2)
@@ -126,9 +126,9 @@ BTFunktioner <- function(beta,theta,x) {
     }
 
     db2 <- function(beta,theta,x){
+      sum = 0;
     for(i in 1:(dim(x)[2]-1)){
       for(j in (i+1):dim(x)[2]) {
-          sum = 0;
             sum = sum + (as.numeric((((-(r[i,j]-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)
                                   -(r[i,j]-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))
                                 *(exp(t(x[,i])%*%beta+t(x[,j])%*%beta)*theta))*((x[,i]-x[,j])%*%t(x[,i]-x[,j]))
@@ -139,9 +139,9 @@ BTFunktioner <- function(beta,theta,x) {
     }
 
     dbt <- function(beta,theta,x){
+      sum=0;
     for(i in 1:(dim(x)[2]-1)){
       for(j in (i+1):dim(x)[2]) {
-        sum=0;
         sum = sum + ((as.numeric((-(r[i,j]-Y[i,j])/(theta*exp(t(x[,i])%*%beta)+exp(t(x[,j])%*%beta))^2)+
                                    ((r[i,j]-Y[j,i])/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta))^2))*
                         (exp(t(x[,i])%*%beta+t(x[,j])%*%beta))*(x[,i]-x[,j]))

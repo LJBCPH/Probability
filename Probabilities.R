@@ -3,7 +3,6 @@ rm(list=ls())
 library(matlib) #Til vektor/matrix regning
 library(blockmatrix) #matrixopsætning
 library(tidyr) #Til data transformation
-library(BTSoccer)
 install.packages("C:/Users/Victo/Documents/GitHub/Probability/BTSoccer", 
                  repos = NULL, 
                  type = "source")
@@ -12,11 +11,11 @@ setwd("C:/Users/Victo/Desktop/bachelor/kode")
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
 data <- read.table("kampe_r1.csv",header=T,sep=",")
-m <- CreateMatrixes(data,"2019-01-01","2019-12-12",0)
+m <- CreateMatrixes(data,"2018-07-15","2019-05-26",0)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
 f <- BTFunktioner(beta,theta,x)
 n <- NR(x,f)
-f$dltheta(beta,theta,x)
+
 head(data)
 str(data)
 #fikser datatypes
@@ -182,7 +181,7 @@ dbt <- function(beta,theta,x){
 #iterationsvektoren:
 #Y = Y*100;r = r*100;
 #Y = Y/100;r = r/100;
-ite = as.matrix(c(rep(0,dim(x)[1]),1.1));counter=0;val=1;
+ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;
 while(abs(val)>0.0000001){
 beta = c(ite[1:(dim(x)[1])]);
 theta=ite[dim(x)[1]+1];
