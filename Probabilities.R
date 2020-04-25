@@ -3,7 +3,11 @@ rm(list=ls())
 library(matlib) #Til vektor/matrix regning
 library(blockmatrix) #matrixopsætning
 library(tidyr) #Til data transformation
-
+install.packages("C:/Users/Victo/Documents/GitHub/Probability/BTSoccer", 
+                 repos = NULL, 
+                 type = "source")
+library(BTSoccer)
+setwd("C:/Users/Victo/Desktop/bachelor/kode")
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
 data <- read.table("kampe_r1.csv",header=T,sep=",")
