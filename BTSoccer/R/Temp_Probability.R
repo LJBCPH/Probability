@@ -3,7 +3,7 @@ require(matlib) #Til vektor/matrix regning
 require(blockmatrix) #matrixopsætning
 require(tidyr) #Til data transformation
 
-CreateMatrixes <- function(data,StartDate,EndDate,round) {
+CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     #fikser datatypes
     data$H <- as.character(data$H)
     data$U <- as.character(data$U)
@@ -59,12 +59,18 @@ CreateMatrixes <- function(data,StartDate,EndDate,round) {
     GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
     GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = mean)[,2])
     GnsSkud <- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
-    GnsSkudIndenfor <- c(aggregate(dataUNan$skud_inderfor_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_inderfor_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+    GnsSkudIndenfor <- c(aggregate(dataUNan$skudindenfor_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skudindenfor_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
     GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
     GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+    GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
     #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-    #TeamRatings <- c(66,63,65,68,64,71,70,66,63,67,64,64,64,64)-63
-    x <- as.data.frame.matrix(rbind(streak,GnsHjorne,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+    TeamRatings <- c(66,65,67,65,71,79,64,64,64,66,65,63)-62
+    if(TR == TRUE){
+      x <- as.data.frame.matrix(rbind(TeamRatings,streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+    } else {
+      x <- as.data.frame.matrix(rbind(streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+    }
+    names(x) <- names(Y)
     #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
     #Danner Antal-kampe-vektoren (r)
     r <- xtabs(data1$Hsejr+data1$Usejr+data1$Uafgjort~H+U,data1)
@@ -154,29 +160,43 @@ BTFunktioner <- function(beta,theta,x) {
   return(Funktions)
 }
 
-NR <- function(x,f) {
+NR <- function(x,f,Beta,Theta,eps = 0.000001,MaxIte = 300) {
     ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;
-    while(abs(val)>0.0000001){
-    beta = c(ite[1:(dim(x)[1])]);
-    theta=ite[dim(x)[1]+1];
+    while(abs(val)>eps){
+    StepHalv = 1/2;
+    if(missing(Beta)){
+      beta = c(ite[1:(dim(x)[1])]);
+    } else {
+      beta = Beta
+    }
+    if(missing(Theta)){
+      theta=ite[dim(x)[1]+1];
+    } else {
+      theta = Theta
+    }
     a12 = as.matrix(f$dlbeta(beta,theta,x));
     grad = rbind(a12,f$dltheta(beta,theta,x));
     A = f$dl2xbeta(beta,theta,x);B = as.matrix(f$dlbetatheta(beta,theta,x));C = t(as.matrix(f$dlbetatheta(beta,theta,x)));D = f$dl2xtheta(beta,theta,x);
     inf = cbind(A,B);inf = rbind(inf,c(C,D));inf=-inf;
+    if(-D < 0 || -A < -B%*%D^(-1)%*%C){
+      StepHalv = -1/4;
+    }
     temp = ite;
-    ite = ite + Inverse(inf)%*%grad*(1/2);
+    ite = ite + Inverse(inf)%*%grad*StepHalv;
     val = sum(temp-ite);
     f$loglike(beta,theta,x)
     counter = counter +1;
+    if(counter > MaxIte){
+      break
     }
-    cat("logl :",f$loglike(beta,theta,x))
-    styrker <- exp(t(x)%*%beta)
+    }
+    cat("logl :",f$loglike(beta,theta,x),"\n","Iterations: ", counter)
+    styrker <- exp(t(x)%*%beta);names(styrker) <- names(Y)
     KV <- inv(inf)
     U <- sqrt(diag(KV))
-    Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U)
+    Values = list("beta" = beta, "theta" = theta,"styrker" = styrker,"sd" = U)
   return(Values)
 }
-
 Sandsynligheder <- function(beta,theta,x,i,j){
   VTU=0;
   VTU = c((styrker[i])/(styrker[i]+theta*styrker[j]),

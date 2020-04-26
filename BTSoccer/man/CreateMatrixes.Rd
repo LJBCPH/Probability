@@ -40,6 +40,8 @@ CreateMatrixes(data, StartDate, EndDate, round)
 %% ~put references to the literature/web site here ~
 }
 \author{
+Victor Emil Skov Lundmark
+Lucas Johan Boesen
 %%  ~~who you are~~
 }
 \note{

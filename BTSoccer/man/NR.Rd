@@ -9,21 +9,40 @@ Laver Newton-Raphson approksimation
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-NR(x, f)
+NR(x, f, beta, theta)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
+  Designmatrix with number of columns equal to number of teams, and number of rows equal to number of beta-estimators.
 %%     ~~Describe \code{x} here~~
-}
+  }
   \item{f}{
+  A BTFunktioner object, which includes the derrivatives of the Likelihoodfunction.
 %%     ~~Describe \code{f} here~~
-}
+  }
+  \item{beta}{
+  The parametervector according to the designmatrix x. If defined, it will not estimate it.
+  }
+  \item{theta}{
+  The parameter to account for ties. If defined, it will not estimate it.
+  }
+  \item{eps}{
+  The value to which the difference in the Newton-Raphson steps will continue
+  }
+  \item{MaxIte}{
+  Max number of iterations.
+  }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
+Returns the following objects:
+beta, the vector containing approximations for the beta-estimators.
+theta, the value of the estimated parameter theta
+styrker, the strengths according to each team, estimated from beta and x
+sd, the standard deviation from the observed Fisher Informations diagonal
 %%  ~Describe the value returned
 %%  If it is a LIST, use
 %%  \item{comp1 }{Description of 'comp1'}
@@ -34,6 +53,8 @@ NR(x, f)
 %% ~put references to the literature/web site here ~
 }
 \author{
+Victor Emil Skov Lundmark \cr
+Lucas Johan Boesen
 %%  ~~who you are~~
 }
 \note{
