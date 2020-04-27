@@ -64,11 +64,14 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
     GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
     #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-    TeamRatings <- c(66,65,67,65,71,79,64,64,64,66,65,63)-62
+    TeamRatings <- c(66,65,67,65,71,69,64,64,64,66,65,63)
+    TeamRatings <- cbind(c(UnikHold),TeamRatings)
+    TeamRatings[,2] <- as.numeric(TeamRatings[,2])
+    TeamRatings <- TeamRatings[TeamRatings[,1] %in% UnikHold,];
     if(TR == TRUE){
-      x <- as.data.frame.matrix(rbind(TeamRatings,streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+      x <- as.data.frame.matrix(rbind(as.numeric(TeamRatings[,2]),streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
     } else {
-      x <- as.data.frame.matrix(rbind(streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+      x <- as.data.frame.matrix(rbind(as.numeric(TeamRatings[,2]),streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
     }
     names(x) <- names(Y)
     #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
@@ -117,7 +120,6 @@ BTFunktioner <- function(beta,theta,x) {
     }
     return(sum)
     }
-
     dtheta2 <- function(beta,theta,x) {
       sum = 0;
     for(i in 1:(dim(x)[2]-1)) {
@@ -160,10 +162,9 @@ BTFunktioner <- function(beta,theta,x) {
   return(Funktions)
 }
 
-NR <- function(x,f,Beta,Theta,eps = 0.000001,MaxIte = 300) {
-    ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;
+NR <- function(x,f,Beta,Theta,eps = 0.00000001,MaxIte = 300) {
+    ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;StepHalv = 1/2;
     while(abs(val)>eps){
-    StepHalv = 1/2;
     if(missing(Beta)){
       beta = c(ite[1:(dim(x)[1])]);
     } else {
@@ -178,8 +179,11 @@ NR <- function(x,f,Beta,Theta,eps = 0.000001,MaxIte = 300) {
     grad = rbind(a12,f$dltheta(beta,theta,x));
     A = f$dl2xbeta(beta,theta,x);B = as.matrix(f$dlbetatheta(beta,theta,x));C = t(as.matrix(f$dlbetatheta(beta,theta,x)));D = f$dl2xtheta(beta,theta,x);
     inf = cbind(A,B);inf = rbind(inf,c(C,D));inf=-inf;
-    if(-D < 0 || -A < -B%*%D^(-1)%*%C){
+    if((-D < 0 || -A < -B%*%D^(-1)%*%C) && counter > 1){
+      cat("Ude af maengden, step tilbage",counter)
       StepHalv = -1/4;
+    } else {
+      StepHalv = 1/2;
     }
     temp = ite;
     ite = ite + Inverse(inf)%*%grad*StepHalv;
