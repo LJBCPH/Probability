@@ -1,6 +1,7 @@
 #git add Probabilities.R #git commit -m "Navn på ændring" #git push #git pull
 rm(list=ls())
 library(matlib) #Til vektor/matrix regning
+library(MASS) # Til invers af numerisk problematiske matricer
 library(blockmatrix) #matrixopsætning
 library(tidyr) #Til data transformation
 library(xtable) #Til Latex table
@@ -15,15 +16,45 @@ data <- read.table("Kampe_r1.csv",header=T,sep=",")
 data$H <- as.character(data$H)
 data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
-m <- CreateMatrixes(data,"2015-07-19","2016-05-29",0,TRUE)
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",4,TRUE)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-f <- BTFunktioner(x=x)
-n <- NR(x,f)
-n$beta
-n$sd
-n$theta
+f <- BTFunktioner(x=x,Y=Y,r=r)
 
-inv(as.matrix(x[,1:11]))
+for (runde in 1:33){
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
+f <- BTFunktioner(x=x,Y=Y,r=r)
+  if (runde == 1) {
+#    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
+    t1 <- f$loglike(beta,theta,x)
+    t2 <- f$dlbeta(beta,theta,x)
+    t3 <- f$dltheta(beta,theta,x)
+    t4 <- f$dl2xtheta(beta,theta,x)
+    t5 <- f$dlbetatheta(beta,theta,x)
+    t6 <- f$dl2xbeta(beta,theta,x)
+  } else {
+    t1 <- t1 + f$loglike(beta,theta,x)
+    t2 <- t2 + f$dlbeta(beta,theta,x)
+    t3 <- t3 + f$dltheta(beta,theta,x)
+    t4 <- t4 + f$dl2xtheta(beta,theta,x)
+    t5 <- t5 + f$dlbetatheta(beta,theta,x)
+    t6 <- t6 + f$dl2xbeta(beta,theta,x)
+  }
+}
+
+f$t1 <- t1;f$t2 <- t2;f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6;
+n <- NR(x,MaxIte = 1000)
+
+beta <- c(0.0954729,0.05781863,3.256189,-0.2238851,0.1585594,-0.4942447,-0.704412,0.08631357,0.06842135,0.08486926,0.3493483,0.03300651)
+a12 = as.matrix(f$dlbeta(beta,theta,x));
+grad = rbind(a12,f$dltheta(beta,theta,x));
+A = f$dl2xbeta(beta,theta,x);B = as.matrix(f$dlbetatheta(beta,theta,x));C = t(as.matrix(f$dlbetatheta(beta,theta,x)));D = f$dl2xtheta(beta,theta,x);
+hess = cbind(A,B);hess = rbind(hess,c(C,D));inf=-hess;
+n$sd
+
+n <- NR(x,f)
+theta=1.01
+data[which((data$dato>="2015-07-19")&(data$dato<="2016-05-29")&(data$runde == 1)),]
 
 normstyrker = n$styrker/min(n$styrker) #normaliserer styrkerne
 styrker = normstyrker;beta = n$beta;theta=n$theta;
@@ -33,7 +64,7 @@ L1 = -189.452
 L2 = -209.046
 #LRT
 chi1 = -2*(L2-L1)
-chi2 = pchisq(chi1,11,lower = F)
+chi2 = pchisq(chi1,11,lower = F);chi2
 
 #Kummulerede sandsynligheder
 r[5,12]*ssh(beta,theta,x,5,13)
@@ -102,7 +133,8 @@ m <- CreateMatrixes(data,"2015-07-19","2016-05-29",0,FALSE)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
 f <- BTFunktioner(x=x)
 x
-styrker
+n = NR(x,f);
+styrker = n$styrker;theta = n$theta; beta = n$beta;
 for (hold1 in 1:length(UnikHold)) {
   for (hold2 in 1:length(UnikHold)) {
     if (hold1 != hold2){
@@ -111,6 +143,50 @@ for (hold1 in 1:length(UnikHold)) {
     }
   }
 }
+KumSSH <- as.data.frame.matrix(KumSSH)
+names(KumSSH) <- c("H","U","Uafgjort","H1","H2")
+#KumSSH$H1H2 <- paste(KumSSH$H1,KumSSH$H2)
+KumSSH[,1]<-as.numeric(paste(KumSSH[,1]));KumSSH[,2] <- as.numeric(paste(KumSSH[,2]));KumSSH[,3] <- as.numeric(paste(KumSSH[,3]));
+sort(KumSSH)
+plot(sort(KumSSH$H[which(KumSSH$H1 == "FCK")]))
+lines(sort(KumSSH$U[which(KumSSH$H1 == "FCK")]))
+lines(KumSSH$Uafgjort[which(KumSSH$H1 == "FCK")])
+######## plot start
+temp <- cbind(KumSSH$H[which(KumSSH$H1 == "FCK")],KumSSH$U[which(KumSSH$H1 == "FCK")],KumSSH$Uafgjort[which(KumSSH$H1 == "FCK")])
+temp <- cbind(temp,cbind(c(rep(1,11)),c(rep(2,11)),c(rep(3,11))))
+temp<- as.data.frame(temp)
+#temp <- cbind(temp,cbind(c(rep("Sejr",11)),c(rep("Tab",11)),c(rep("Uafgjort",11))))
+#temp[,1] <- as.numeric(temp[,1])
+temp = cbind(c(temp[,1],temp[,2],temp[,3]),c(temp[,4],temp[,5],temp[,6]))
+temp<- as.data.frame(temp)
+names(temp) <- c("Sandsynlighed","Udfald")
+temp$Udfald <- factor(temp$Udfald, labels = c("Sejr","Tab","Uafgjort"))
+ggplot(temp,aes(x = as.factor(Udfald),y=Sandsynlighed,fill = Udfald)) + geom_boxplot() + xlab("Udfald") +
+ geom_hline(yintercept = (sum(dh$Hsejr)+sum(du$Usejr))/33,color = "red",linetype="dashed") +
+  geom_hline(yintercept = (sum(dh$Usejr)+sum(du$Hsejr))/33,color = "green", linetype="dashed") +
+  geom_hline(yintercept = (sum(dh$Uafgjort)+sum(du$Uafgjort))/33,color = "blue", linetype="dashed") +
+  scale_linetype_manual(name = "Observerede procenter", values = c(2, 2),
+                      guide = guide_legend(override.aes = list(color = c("red", "blue","green"))))
+############################ plot end
+boxplot(temp[,1:3]~temp[,4:6],main= "FCK",names = c("Sejr","Tab","Uafgjort"))
+dh <- data1[which(data1$H=="FCK"),]
+du <- data1[which(data1$U=="FCK"),]
+abline(h=(sum(dh$Hsejr)+sum(du$Usejr))/33,col = "red",col = "Sejr")
+abline(h=(sum(dh$Usejr)+sum(du$Hsejr))/33,col = "blue")
+abline(h=(sum(dh$Uafgjort)+sum(du$Uafgjort))/33,col = "green")
+text(3.5,(sum(dh$Hsejr)+sum(du$Usejr))/33+0.03,"1",col="black")
+text(3.5,(sum(dh$Usejr)+sum(du$Hsejr))/33+0.03,"2",col="black")
+text(3.5,(sum(dh$Uafgjort)+sum(du$Uafgjort))/33+0.03,"3",col="black")
+?boxplot
+
+t2 <- c(data1$Sejr,data1$Sejr)
+plot((t2-1)/2)
+lines(1:396,sort(temp))
+temp <- c(KumSSH[,1],KumSSH[,2],KumSSH[,3])
+loe <- loess((t2-1)/2 ~ c(1:392),control = loess.control(surface = "direct"))
+ord <- order(data1$Hsejr+data1$Usejr+data1$Uafgjort)
+lines(1:392,sort(loe$fitted[1:392]),col = 2)
+sort(loe$fitted[1:392])
 
 KumSSH[,1:3]=KumSSH[,1:3]*1.5
 PointSSH[,1:3] <- PointSSH[,1:3]/1.5
