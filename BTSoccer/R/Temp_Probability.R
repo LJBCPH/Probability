@@ -1,4 +1,3 @@
-#git add Probabilities.R #git commit -m "Navn på ændring" #git push #git pull
 require(matlib) #Til vektor/matrix regning
 require(blockmatrix) #matrixopsætning
 require(tidyr) #Til data transformation
@@ -11,7 +10,7 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     #Henter 1.5 sæson ud:
     #StartDate = "2015-07-17";EndDate = "2016-05-29";round = 2;
     data2 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde == round)),]
-    data1 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde <= round)),]
+    data1 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde < round)),]
     #data1 <- data1[(data1$H %in% data2$H) | (data1$U %in% data2$U),];
     #data1 <- data1[data1$U %in% data2$U,];
     #Finder holdene der er i Superligaen i indeværende sæson
@@ -41,7 +40,7 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     Y <- xtabs(samlet$x~(H1+H2),samlet)
     Y <- as.data.frame.matrix(Y)
     #Danner designmatricen
-    UnikHold <- unique(data1$H)
+    UnikHold <- cbind(unique(c(data1$H,data1$U)))
     UnikHold <- sort(UnikHold)
     streak <- c(rep(1,length(UnikHold)))
     #Danner ikke-tab-streak
@@ -65,20 +64,20 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     streak[hold] = StreakSum
     }
 
-    GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = mean)[,2])/2
-    GnsMalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = mean)[,2])/2
-    GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
-    GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
-    GnsSkud <- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
-    GnsSkudIndenfor <- c(aggregate(dataUNan$skudindenfor_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$skudindenfor_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
-    GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
-    GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
-    GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
+    Mal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = sum)[,2])
+    MalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = sum)[,2])
+    GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = sum)[,2])/(round-1)
+    GnsBoldBes <- c(aggregate(dataUNan$boldb_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$boldb_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
+    GnsSkud <- c(aggregate(dataUNan$skud_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$skud_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
+    GnsSkudIndenfor <- c(aggregate(dataUNan$skudindenfor_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$skudindenfor_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
+    GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
+    GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
+    GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
     #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
     TeamRatings <- c(66,65,67,65,71,69,64,64,64,66,65,63)
     TeamRatings <- cbind(c(UnikHold),TeamRatings)
-    TeamRatings[,2] <- as.numeric(TeamRatings[,2])
     TeamRatings <- TeamRatings[TeamRatings[,1] %in% UnikHold,];
+    FifaRating <- as.numeric(TeamRatings[,2])
     HjemmeBane <- c(rep(0,length(UnikHold)))
     for (hold in 1:length(UnikHold)) {
       for (kamp in 1:length(data2$H)) {
@@ -88,10 +87,11 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
       }
     }
     if(TR == TRUE){
-      x <- as.data.frame.matrix(rbind(HjemmeBane,as.numeric(TeamRatings[,2]),streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+      x <- as.data.frame.matrix(rbind(HjemmeBane,FifaRating,streak,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
     } else {
       x <- as.data.frame.matrix(rbind(HjemmeBane,as.numeric(TeamRatings[,2]),streak,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
     }
+    x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
     names(x) <- names(Y)
     #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
     #Danner Antal-kampe-vektoren (r)
@@ -117,7 +117,7 @@ BTFunktioner <- function(beta,theta,x,Y,r) {
     sum=0;
     for (i in 1:(dim(x)[2]-1)){
       for (j in (i+1):(dim(x)[2])){
-        sum = sum +Y[i,j]*(t(x[,i])%*%beta-log(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))+
+        sum = sum + Y[i,j]*(t(x[,i])%*%beta-log(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))+
           Y[j,i]*(t(x[,j])%*%beta-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))+
           (r[i,j]-Y[i,j]-Y[j,i])*(log(theta^2-1)+t(x[,i])%*%beta+t(x[,j])%*%beta-log(exp(t(x[,i])%*%beta)+
            theta*exp(t(x[,j])%*%beta))-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
@@ -191,17 +191,29 @@ BTFunktioner <- function(beta,theta,x,Y,r) {
   return(Funktions)
  }
 
-NR <- function(x,f,Beta,Theta,eps = 0.00000001,MaxIte = 300) {
-    ite = as.matrix(c(rep(0,dim(x)[1]),1.55));counter=0;val=1;StepHalv = 1/2;
-    while(abs(val)>eps){
+NR <- function(x,Beta,Theta,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300) {
+  if(missing(Sbeta)) {
+    itebeta <- c(rep(0,dim(x)[1]))
+  } else {
+    itebeta <- Sbeta
+  }
+  if(missing(Stheta)) {
+    itetheta <- 1.1
+  } else {
+    itetheta <- Stheta
+  }
+  ite = as.matrix(c(itebeta,itetheta))
+  #ite = as.matrix(c(rep(0,dim(x)[1]),1.55));
+  counter=0;val=1;StepHalv = 1/2;
+  while(abs(val)>eps){
       if(missing(Beta)){
         beta = c(ite[1:(dim(x)[1])]);
         } else {
         beta = Beta
-      }
+        }
       if(missing(Theta)){
         theta=ite[dim(x)[1]+1];
-      } else {
+        } else {
         theta = Theta
         }
       #a12 = as.matrix(f$t2);
@@ -210,11 +222,11 @@ NR <- function(x,f,Beta,Theta,eps = 0.00000001,MaxIte = 300) {
       #hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
       if(counter > 1 && (-D < 0 || -A+B%*%D^(-1)%*%C < 0)){
          cat("Ude af maengden, step tilbage",counter)
-          for (runde in 1:33){
+          for (runde in 2:33){
             m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
             x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
             f <- BTFunktioner(x=x,Y=Y,r=r)
-            if (runde == 1) {
+            if (runde == 2) {
               #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
               t1 <- f$loglike(beta,theta,x)
               t2 <- f$dlbeta(beta,theta,x)
@@ -238,16 +250,16 @@ NR <- function(x,f,Beta,Theta,eps = 0.00000001,MaxIte = 300) {
           hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
           StepHalv = -1/4;
           temp = ite;
-          ite = ite + chol2inv(inf)%*%grad*StepHalv;
+          ite = ite + inv(inf)%*%grad*StepHalv;
           val = sum(temp-ite);
           counter = counter +1;
           cat(counter)
         } else {
-          for (runde in 1:33){
+          for (runde in 3:33){
             m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
             x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
             f <- BTFunktioner(x=x,Y=Y,r=r)
-            if (runde == 1) {
+            if (runde == 3) {
               #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
               t1 <- f$loglike(beta,theta,x)
               t2 <- f$dlbeta(beta,theta,x)
@@ -271,7 +283,7 @@ NR <- function(x,f,Beta,Theta,eps = 0.00000001,MaxIte = 300) {
           hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
           StepHalv = 1/2;
           temp = ite;
-          ite = ite + chol2inv(inf)%*%grad*StepHalv;
+          ite = ite + inv(inf)%*%grad*StepHalv;
           val = sum(temp-ite);
           counter = counter +1;
           cat("\n",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
@@ -283,12 +295,12 @@ NR <- function(x,f,Beta,Theta,eps = 0.00000001,MaxIte = 300) {
     }
     cat("logl :",f$loglike(beta,theta,x),"\n","Iterations: ", counter)
     styrker <- exp(t(x)%*%beta);names(styrker) <- names(Y)
-    KV <- chol2inv(inf)
+    KV <- inv(inf)
     U <- sqrt(diag(KV))
     Values = list("beta" = beta, "theta" = theta,"styrker" = styrker,"sd" = U)
   return(Values)
 }
-Sandsynligheder <- function(theta,x,i,j,styrker){
+Sandsynligheder <- function(theta,x,styrker,i,j){
   VTU=0;
   VTU = c((styrker[i])/(styrker[i]+theta*styrker[j]),
           ((styrker[j])/(styrker[i]*theta+styrker[j])),

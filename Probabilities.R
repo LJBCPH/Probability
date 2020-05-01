@@ -9,6 +9,7 @@ install.packages("C:/Users/Victo/Documents/GitHub/Probability/BTSoccer",
                  repos = NULL,
                  type = "source")
 library(BTSoccer)
+library(ggplot2)
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
@@ -16,16 +17,21 @@ data <- read.table("Kampe_r1.csv",header=T,sep=",")
 data$H <- as.character(data$H)
 data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
-m <- CreateMatrixes(data,"2015-07-17","2016-05-29",4,TRUE)
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",33,TRUE)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
 f <- BTFunktioner(x=x,Y=Y,r=r)
+#x <- lapply(x[-1,], function(y) y/sum(y))
+as.data.frame(x)
+prop.tablet(t(x)/rowSums(x))
+prop.table(as.matrix(x),1)
+as.data.frame.matrix(prop.table(as.matrix(x),1))
 
-for (runde in 1:33){
+for (runde in 2:33){
 m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
 f <- BTFunktioner(x=x,Y=Y,r=r)
-  if (runde == 1) {
-#    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
+  if (runde == 2) {
+#   funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
     t1 <- f$loglike(beta,theta,x)
     t2 <- f$dlbeta(beta,theta,x)
     t3 <- f$dltheta(beta,theta,x)
@@ -41,27 +47,133 @@ f <- BTFunktioner(x=x,Y=Y,r=r)
     t6 <- t6 + f$dl2xbeta(beta,theta,x)
   }
 }
+styrker = 0;y = 0;R=0;X=0;FF=0;
+for (runde in 3:33){
+  m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+  x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;f <- BTFunktioner(x=x,Y=Y,r=r);
+  styrker <- styrker+(exp(t(x)%*%beta));
+  toprint <- exp(t(x)%*%beta)/(min(exp(t(x)%*%beta)))
+  #print(toprint)
+  FF <- FF + f$loglike(beta,theta,x)
+  R <- R + r
+  y <- y + Y
+  X <- X + x
+}
 
-f$t1 <- t1;f$t2 <- t2;f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6;
-n <- NR(x,MaxIte = 1000)
-
-beta <- c(0.0954729,0.05781863,3.256189,-0.2238851,0.1585594,-0.4942447,-0.704412,0.08631357,0.06842135,0.08486926,0.3493483,0.03300651)
-a12 = as.matrix(f$dlbeta(beta,theta,x));
-grad = rbind(a12,f$dltheta(beta,theta,x));
-A = f$dl2xbeta(beta,theta,x);B = as.matrix(f$dlbetatheta(beta,theta,x));C = t(as.matrix(f$dlbetatheta(beta,theta,x)));D = f$dl2xtheta(beta,theta,x);
-hess = cbind(A,B);hess = rbind(hess,c(C,D));inf=-hess;
+exp(t(x[2:12,])%*%beta[2:12])/min(exp(t(x[2:12,])%*%beta[2:12]))
+styrker/min(styrker)
+beta <- c(rep(0,length(x[1,])))
+n <- NR(x)
+n$styrker/min(n$styrker)
+beta <- n$beta;
+theta <- n$theta
 n$sd
+data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29")),]
+UnikHold <- unique(data1$H)
+UnikHold <- sort(UnikHold)
+runde = 3
+#Sandsyligheder vs udfald
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",3,TRUE)
 
-n <- NR(x,f)
-theta=1.01
-data[which((data$dato>="2015-07-19")&(data$dato<="2016-05-29")&(data$runde == 1)),]
+a = 0;b=0;aa=0;bb=0;
+aa <- as.matrix(rbind(c(0,0,0)));bb <- as.matrix(rbind(c(0,0,0)));cc <- as.matrix(rbind(c(0,0,0,"H","U")));
+for (runde in 3:33){
+  m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+  x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;f <- BTFunktioner(x=x,Y=Y,r=r);
+  data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29") & (data$runde == runde)),]
+  data1$HU <- paste(data1$H,data1$U)
+  styrker <- exp(t(x)%*%beta)
+  counter = 1;KumSSH <- matrix(NA, nrow = (factorial(length(UnikHold))/(factorial((length(UnikHold)-2)))), ncol = 5)
+  for (hold1 in 1:length(UnikHold)) {
+    for (hold2 in 1:length(UnikHold)) {
+      if (hold1 != hold2){
+        KumSSH[counter,] <- cbind(Sandsynligheder(theta,x,styrker,hold1,hold2)[1],Sandsynligheder(theta,x,styrker,hold1,hold2)[2],Sandsynligheder(theta,x,styrker,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
+        counter = counter +1
+      }
+    }
+  }
+  KumSSH <- as.data.frame.matrix(KumSSH)
+  names(KumSSH) <- c("H","U","Uafgjort","H1","H2")
+  KumSSH$H1H2 <- paste(KumSSH$H1,KumSSH$H2)
+  ssh <- KumSSH[KumSSH$H1H2 %in% data1$HU,]
+  ssh$H <- as.numeric(as.character(ssh$H));ssh$U <- as.numeric(as.character(ssh$U));ssh$Uafgjort <- as.numeric(as.character(ssh$Uafgjort))
+  ssh <- ssh[order(ssh$H1H2),]
+  data1 <- data1[order(data1$HU),]
+  as.data.frame(lapply((cbind(data1$Hsejr,data1$Usejr,data1$Uafgjort)-cbind(ssh$H,ssh$U,ssh$Uafgjort))^2, function(y) sum(y)))
+  A <- c(rowSums(as.matrix((cbind(data1$Hsejr,data1$Usejr,data1$Uafgjort)-cbind(ssh$H,ssh$U,ssh$Uafgjort))^2)))
+  a <- c(append(a,A,after= length(a)))
+  B <- c(rowSums((cbind(ssh$H,ssh$U,ssh$Uafgjort)^2)))
+  b <- c(append(b,B,after = length(b)))
+  AA <- (as.matrix((cbind(data1$Hsejr,data1$Usejr,data1$Uafgjort)-cbind(ssh$H,ssh$U,ssh$Uafgjort))))
+  aa <- rbind(aa,AA)
+  BB <- as.matrix(((cbind(ssh$H,ssh$U,ssh$Uafgjort))))
+  bb <- rbind(bb,BB)
+  CC <- as.matrix(((cbind(ssh$H,ssh$U,ssh$Uafgjort,data1$H,data1$U))))
+  cc <- rbind(cc,CC)
+}
+cc <- cc[2:length(cc[,1]),]
+sump <- aggregate(as.numeric(cc[,1]),by = list(UnikHold=cc[,4]),FUN = sum)[,2]*3+aggregate(as.numeric(cc[,2]),by = list(UnikHold=cc[,5]),FUN = sum)[,2]*3+
+aggregate(as.numeric(cc[,3]),by = list(UnikHold=cc[,4]),FUN = sum)[,2]+aggregate(as.numeric(cc[,3]),by = list(UnikHold=cc[,5]),FUN = sum)[,2]
+names(sump) <- names(x)
 
+a <- a[2:length(a)]
+b <- b[2:length(b)]
+aa <- aa[2:length(aa[,1]),1:3]
+bb <- bb[2:length(bb[,1]),1:3]
+mean(data1$Uafgjort)
+
+aa <- as.data.frame(aa)
+bb <- as.data.frame(bb)
+#PLOTS TJEK S: 46, plot ssh. for sejr ift. om man er hjemme eller ude, confusion matrix (antal udfald est. vs udfald)
+par(mfrow=c(3,1), mar=c(3,5,3,3))
+plot(sort(a))
+plot(sort(b))
+plot(b,a)
+cbind(sort(b),a)
+lines(ppoints(a))
+plot((sort(aa[,1])))
+lines(bb[,1],col="red")
+plot((aa[,2]))
+lines(bb[,2],col="red")
+plot((aa[,3]))
+lines(bb[,3],col="red")
+mean(aa[,1])
+plot(aa[,1],bb[,1])
+plot(aa[,2],bb[,2])
+plot(aa[,3],bb[,3])
+plot(data1$Sejr)
+plot(cumsum(aa[,3]))
+mean(aa[,1])
+cumsum(aa[,1])
+plot(a)
+temp <- as.data.frame(data1)
+corrplot(as.data.frame(data1$Sejr)~as.data.frame(data1$H))
+
+ggplot(temp,aes(x = as.factor(Sejr),y=Sejr,fill = Sejr)) + geom_boxplot() + xlab("Udfald") +
+  geom_hline(yintercept = (sum(dh$Hsejr)+sum(du$Usejr))/33,color = "red",linetype="dashed") +
+  geom_hline(yintercept = (sum(dh$Usejr)+sum(du$Hsejr))/33,color = "green", linetype="dashed") +
+  geom_hline(yintercept = (sum(dh$Uafgjort)+sum(du$Uafgjort))/33,color = "blue", linetype="dashed") +
+  scale_linetype_manual(name = "Observerede procenter", values = c(2, 2),
+                        guide = guide_legend(override.aes = list(color = c("red", "blue","green"))))
+plot(sort(abs(aa[,1])))
+#lines(ppoints(aa[,1]))
+lines(ppoints(data1$Hsejr))
+ggplot()
+ggplot(temp,aes(x = as.factor(Udfald),y=Sandsynlighed,fill = Udfald)) + geom_boxplot() + xlab("Udfald") +
+  geom_hline(yintercept = (sum(dh$Hsejr)+sum(du$Usejr))/33,color = "red",linetype="dashed") +
+  geom_hline(yintercept = (sum(dh$Usejr)+sum(du$Hsejr))/33,color = "green", linetype="dashed") +
+  geom_hline(yintercept = (sum(dh$Uafgjort)+sum(du$Uafgjort))/33,color = "blue", linetype="dashed") +
+  scale_linetype_manual(name = "Observerede procenter", values = c(2, 2),
+                        guide = guide_legend(override.aes = list(color = c("red", "blue","green"))))
+
+#############ssh vs udfald end
+############LRT test
 normstyrker = n$styrker/min(n$styrker) #normaliserer styrkerne
 styrker = normstyrker;beta = n$beta;theta=n$theta;
 Sandsynligheder(beta,theta,x,1,2)
 beta = c(rep(0,length(x[,1])))
-L1 = -189.452
-L2 = -209.046
+L1 = -188.9955
+L2 = -204.7076
 #LRT
 chi1 = -2*(L2-L1)
 chi2 = pchisq(chi1,11,lower = F);chi2
@@ -90,7 +202,7 @@ f <- BTFunktioner(x=x)
 for (hold1 in 1:length(UnikHold)) {
   for (hold2 in 1:length(UnikHold)) {
       if (hold1 != hold2){
-      KumSSH[counter,] <- cbind(Sandsynligheder(,theta,x,hold1,hold2)[1],Sandsynligheder(,theta,x,hold1,hold2)[2],Sandsynligheder(,theta,x,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
+      KumSSH[counter,] <- cbind(Sandsynligheder(theta,x,hold1,hold2)[1],Sandsynligheder(theta,x,hold1,hold2)[2],Sandsynligheder(theta,x,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
       counter = counter +1
       }
     }
