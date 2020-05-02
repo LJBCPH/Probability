@@ -17,53 +17,46 @@ data <- read.table("Kampe_r1.csv",header=T,sep=",")
 data$H <- as.character(data$H)
 data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
-m <- CreateMatrixes(data,"2015-07-17","2016-05-29",33,TRUE)
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",33)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
+n <- NR(x=x)
+round(n$beta,6)
+round(n$sd,6)
+round(n$theta,6)
 f <- BTFunktioner(x=x,Y=Y,r=r)
 #x <- lapply(x[-1,], function(y) y/sum(y))
 as.data.frame(x)
 prop.tablet(t(x)/rowSums(x))
 prop.table(as.matrix(x),1)
 as.data.frame.matrix(prop.table(as.matrix(x),1))
-
-for (runde in 2:33){
-m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
-x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-f <- BTFunktioner(x=x,Y=Y,r=r)
-  if (runde == 2) {
-#   funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
-    t1 <- f$loglike(beta,theta,x)
-    t2 <- f$dlbeta(beta,theta,x)
-    t3 <- f$dltheta(beta,theta,x)
-    t4 <- f$dl2xtheta(beta,theta,x)
-    t5 <- f$dlbetatheta(beta,theta,x)
-    t6 <- f$dl2xbeta(beta,theta,x)
+alpha=33
+styrker = 0;y = 0;R=0;X=0;FF=0;SamlStyrker=0;
+for(alpha in 2:33){
+  styrker = 0;y = 0;R=0;X=0;FF=0;
+  for (runde in 2:33){
+  if(runde<=alpha){
+    alphaback = 1
   } else {
-    t1 <- t1 + f$loglike(beta,theta,x)
-    t2 <- t2 + f$dlbeta(beta,theta,x)
-    t3 <- t3 + f$dltheta(beta,theta,x)
-    t4 <- t4 + f$dl2xtheta(beta,theta,x)
-    t5 <- t5 + f$dlbetatheta(beta,theta,x)
-    t6 <- t6 + f$dl2xbeta(beta,theta,x)
+    alphaback = runde-alpha
   }
-}
-styrker = 0;y = 0;R=0;X=0;FF=0;
-for (runde in 3:33){
-  m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+  data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29") & (data$runde>=alphaback)),]
+  m <- CreateMatrixes(data1,"2015-07-17","2016-05-29",runde)
   x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;f <- BTFunktioner(x=x,Y=Y,r=r);
   styrker <- styrker+(exp(t(x)%*%beta));
+  #SamlStyrker <- SamlStyrker + styrker
   toprint <- exp(t(x)%*%beta)/(min(exp(t(x)%*%beta)))
-  #print(toprint)
   FF <- FF + f$loglike(beta,theta,x)
   R <- R + r
   y <- y + Y
   X <- X + x
 }
+  #cat(alpha,"   ",FF,"\n",names(x),"\n",styrker/min(styrker),"\n")
+}
+styrknorm <- styrker/min(styrker)
+(styrknorm)[order(styrknorm),]
 
-exp(t(x[2:12,])%*%beta[2:12])/min(exp(t(x[2:12,])%*%beta[2:12]))
-styrker/min(styrker)
 beta <- c(rep(0,length(x[1,])))
-n <- NR(x)
+n <- NR(x=x)
 n$styrker/min(n$styrker)
 beta <- n$beta;
 theta <- n$theta
@@ -73,8 +66,7 @@ UnikHold <- unique(data1$H)
 UnikHold <- sort(UnikHold)
 runde = 3
 #Sandsyligheder vs udfald
-m <- CreateMatrixes(data,"2015-07-17","2016-05-29",3,TRUE)
-
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",4,TRUE)
 a = 0;b=0;aa=0;bb=0;
 aa <- as.matrix(rbind(c(0,0,0)));bb <- as.matrix(rbind(c(0,0,0)));cc <- as.matrix(rbind(c(0,0,0,"H","U")));
 for (runde in 3:33){
@@ -83,6 +75,7 @@ for (runde in 3:33){
   data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29") & (data$runde == runde)),]
   data1$HU <- paste(data1$H,data1$U)
   styrker <- exp(t(x)%*%beta)
+  #styrker <- statstyrker
   counter = 1;KumSSH <- matrix(NA, nrow = (factorial(length(UnikHold))/(factorial((length(UnikHold)-2)))), ncol = 5)
   for (hold1 in 1:length(UnikHold)) {
     for (hold2 in 1:length(UnikHold)) {
@@ -111,10 +104,28 @@ for (runde in 3:33){
   CC <- as.matrix(((cbind(ssh$H,ssh$U,ssh$Uafgjort,data1$H,data1$U))))
   cc <- rbind(cc,CC)
 }
+
+#Fixer data til Hosmer og Lemeshows GOF-test
+data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29")),]
 cc <- cc[2:length(cc[,1]),]
-sump <- aggregate(as.numeric(cc[,1]),by = list(UnikHold=cc[,4]),FUN = sum)[,2]*3+aggregate(as.numeric(cc[,2]),by = list(UnikHold=cc[,5]),FUN = sum)[,2]*3+
-aggregate(as.numeric(cc[,3]),by = list(UnikHold=cc[,4]),FUN = sum)[,2]+aggregate(as.numeric(cc[,3]),by = list(UnikHold=cc[,5]),FUN = sum)[,2]
+cc <- as.data.frame(cc)
+ccc <- as.data.frame(cc[,1:3])
+Expect <- cbind(as.numeric(as.character(ccc[,1])),as.numeric(as.character(ccc[,3])),as.numeric(as.character(ccc[,2])))
+colnames(Expect) <- c("1","2","3")
+Expect <- as.data.frame(Expect)
+data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29")),]
+data1 <- data1[order(data1$runde,data1$H),]
+data1 <- data1[13:length(data1[,2]),]
+obs <- cbind(data1$Sejr,data1$H,data1$U)
+obs <- as.data.frame(obs)
+?cast
+logitgof(relevel(factor(obs$V1),'3'),Expect,10)
+#logitgof(relevel(factor(mtcars$gear),'3'),fitted(mod5))
+cc <- as.data.frame(cc)
+sump <- aggregate(as.numeric(as.character(cc[,1])),by = list(UnikHold=cc[,4]),FUN = sum)[,2]*3+aggregate(as.numeric(as.character(cc[,2])),by = list(UnikHold=cc[,5]),FUN = sum)[,2]*3+
+aggregate(as.numeric(as.character(cc[,3])),by = list(UnikHold=cc[,4]),FUN = sum)[,2]+aggregate(as.numeric(as.character(cc[,3])),by = list(UnikHold=cc[,5]),FUN = sum)[,2]
 names(sump) <- names(x)
+sump*(1+2/33)
 
 a <- a[2:length(a)]
 b <- b[2:length(b)]
@@ -148,13 +159,31 @@ cumsum(aa[,1])
 plot(a)
 temp <- as.data.frame(data1)
 corrplot(as.data.frame(data1$Sejr)~as.data.frame(data1$H))
+dh <- data1[which(data1$H=="FCK"),]
+du <- data1[which(data1$U=="FCK"),]
+cc <- as.data.frame(cc)
+temp <- as.data.frame(cbind(c(as.numeric(as.character(cc$V1)),as.numeric(as.character(cc$V2)),as.numeric(as.character(cc$V3))),c(rep("Hjemmesejr",186),rep("Udesejr",186),rep("Uafgjort",186))))
+colnames(temp) <- c("Estimeret Sandsynlighed","Udfald")
+temp$`Estimeret Sandsynlighed` <- as.numeric(as.character(temp$`Estimeret Sandsynlighed`))
 
-ggplot(temp,aes(x = as.factor(Sejr),y=Sejr,fill = Sejr)) + geom_boxplot() + xlab("Udfald") +
-  geom_hline(yintercept = (sum(dh$Hsejr)+sum(du$Usejr))/33,color = "red",linetype="dashed") +
-  geom_hline(yintercept = (sum(dh$Usejr)+sum(du$Hsejr))/33,color = "green", linetype="dashed") +
-  geom_hline(yintercept = (sum(dh$Uafgjort)+sum(du$Uafgjort))/33,color = "blue", linetype="dashed") +
-  scale_linetype_manual(name = "Observerede procenter", values = c(2, 2),
+str(temp)
+ggplot(temp,aes(x = as.factor(Udfald),y=`Estimeret Sandsynlighed`,fill = Udfald)) + geom_boxplot() + xlab("Udfald") +
+#  geom_hline(yintercept = (mean(data1$Hsejr)),color = 'red',linetype="dashed",size=1) +
+#  geom_hline(yintercept = (mean(data1$Usejr)),color = 'blue', linetype="dashed",size=1) +
+#  geom_hline(yintercept = (mean(data1$Uafgjort)),color = 'green', linetype="dashed",size=1) +
+  geom_hline(aes(yintercept= mean(data1$Hsejr), linetype = "Obs. Hjemesejr"), colour= 'red',size=1) +
+  geom_hline(aes(yintercept= mean(data1$Usejr), linetype = "Obs. Udesejr"), colour= 'blue',size=1) +
+  geom_hline(aes(yintercept= mean(data1$Uafgjort), linetype = "Obs. Uafgjort"), colour= 'green',size=1) +
+  scale_linetype_manual(name = "Observerede procenter", values = c(2, 2,2),
                         guide = guide_legend(override.aes = list(color = c("red", "blue","green"))))
+
+mean(as.numeric(as.character(cc$V3)))
+
+geom_hline(aes(yintercept= 10, linetype = "NRW limit"), colour= 'red') +
+  geom_hline(aes(yintercept= 75.5, linetype = "Geochemical atlas limit"), colour= 'blue') +
+  scale_linetype_manual(name = "limit", values = c(2, 2),
+                        guide = guide_legend(override.aes = list(color = c("blue", "red"))))
+
 plot(sort(abs(aa[,1])))
 #lines(ppoints(aa[,1]))
 lines(ppoints(data1$Hsejr))
@@ -172,16 +201,52 @@ normstyrker = n$styrker/min(n$styrker) #normaliserer styrkerne
 styrker = normstyrker;beta = n$beta;theta=n$theta;
 Sandsynligheder(beta,theta,x,1,2)
 beta = c(rep(0,length(x[,1])))
-L1 = -188.9955
-L2 = -204.7076
+NR(x=x)
+Lmle = -181.0983
+Lh0 = -198.0325
 #LRT
-chi1 = -2*(L2-L1)
-chi2 = pchisq(chi1,11,lower = F);chi2
+chi1 = -2*(Lh0-Lmle)
+chi2 = pchisq(chi1,12,lower = F);chi2
 
 #Kummulerede sandsynligheder
 r[5,12]*ssh(beta,theta,x,5,13)
 
-#Dynamisk model
+#Forsøg på standardfejl på styrker
+dlpipi <- function(styrker,theta,Y,r,i){
+  sum=0;
+  for(j in 1:length(styrker)) {
+    if(j != i){
+        sum = sum + (-((r[i,j]-Y[j,i])/(styrker[i]^2))+
+                    ((r[i,j]-Y[j,i])/(styrker[i]+theta*styrker[j])^2)+
+                    ((theta*(r[i,j]-Y[i,j]))/(styrker[j]+theta*styrker[i])^2))
+      }
+  }
+  return(sum)
+}
+dlpipj <- function(styrker,theta,Y,r,i,j){
+  sum=((theta*(r[i,j]-Y[j,i]))/(styrker[i]+theta*styrker[j])^2)+
+      ((theta*(r[i,j]-Y[i,j]))/(styrker[j]+theta*styrker[i])^2)
+  return(sum)
+}
+#Laver matricen
+sdmat <- matrix(nc=length(styrker),nr=length(styrker));SamlStyrker = SamlStyrker/min(SamlStyrker)
+for(i in 1:length(SamlStyrker)){
+  for(j in 1:length(styrker)){
+    if(i == j){
+      sdmat[i,i] = dlpipi(SamlStyrker,n$theta,y,R,i)
+    }else {
+      sdmat[i,j]= dlpipj(SamlStyrker,n$theta,y,R,i,j)
+    }
+  }
+}
+sdsty <- sqrt(diag(inv(-sdmat)))
+names(sdsty) <- rownames(styrker)
+SamlStyrker
+sdsty
+#Done sd styrker
+
+
+########OLD Dynamisk model########33
 MeanStyrker = 0;MeanBeta = 0; MeanTheta = 0; MeanSD = 0;
 startrunde = 4;PointSSH = 0;PointSSH = c(0,0,0,"FCK","FCK","NN")
 Fejl <- c(rep(0,length(unique(data$runde))-13))
