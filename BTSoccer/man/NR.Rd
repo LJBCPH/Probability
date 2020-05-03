@@ -4,8 +4,8 @@
 \title{d
 %%  ~~function to do ... ~~
 }
-\description{d
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+\description{
+Laver Newton-Raphson approksimation tilh. den dynamiske model
 }
 \usage{
 NR(x)

@@ -5,7 +5,7 @@
 %%  ~~function to do ... ~~
 }
 \description{s
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Laver designmatricen, kontingentstabellen og antal kampe tabellen
 }
 \usage{
 CreateMatrixes(x)

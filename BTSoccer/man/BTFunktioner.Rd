@@ -4,8 +4,8 @@
 \title{a
 %%  ~~function to do ... ~~
 }
-\description{a
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+\description{
+Laver afledte til Rao Kupper modellen
 }
 \usage{
 BTFunktioner(x)

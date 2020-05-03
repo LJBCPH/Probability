@@ -5,7 +5,7 @@
 %%  ~~function to do ... ~~
 }
 \description{f
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Udregner ssh. for at hold i vinder over hold j, ved givne styrker
 }
 \usage{
 Sandsynligheder(x)
