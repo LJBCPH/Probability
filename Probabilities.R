@@ -19,16 +19,8 @@ data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
 m <- CreateMatrixes(data,"2015-07-17","2016-05-29",33)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-n <- NR(x=x)
-round(n$beta,6)
-round(n$sd,6)
-round(n$theta,6)
-f <- BTFunktioner(x=x,Y=Y,r=r)
-#x <- lapply(x[-1,], function(y) y/sum(y))
-as.data.frame(x)
-prop.tablet(t(x)/rowSums(x))
-prop.table(as.matrix(x),1)
-as.data.frame.matrix(prop.table(as.matrix(x),1))
+n <- NR(x=x);beta <- n$beta;theta <- n$theta;
+
 alpha=33
 styrker = 0;y = 0;R=0;X=0;FF=0;SamlStyrker=0;
 for(alpha in 2:33){
