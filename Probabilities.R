@@ -18,7 +18,6 @@ m <- CreateMatrixes(data,"2015-07-17","2016-05-29",33)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
 n <- NR(x=x,eps=0.001);beta <- n$beta;theta <- n$theta;
 sum(abs(beta))
-?NR
 alpha=33
 styrker = 0;y = 0;R=0;X=0;FF=0;SamlStyrker=0;
 for(alpha in 2:33){
