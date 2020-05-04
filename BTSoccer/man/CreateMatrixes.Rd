@@ -1,20 +1,26 @@
 \name{CreateMatrixes}
 \alias{CreateMatrixes}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{s
+\title{CreateMatrixes
 %%  ~~function to do ... ~~
 }
-\description{s
-Laver designmatricen, kontingentstabellen og antal kampe tabellen
+\description{Laver Designmatrice, kontingentstabel og antal spillede kampe tabel
+%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
 CreateMatrixes(x)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
+  \item{data}{ Data til modellen
 %%     ~~Describe \code{x} here~~
-}
+}\item{StartDate}{
+Startdato
+}\item{EndDate}{
+Slutdato
+}\item{round}{ Runden der skal laves matricer til
+
+}\item{TR}{ Deprecated}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -42,14 +48,7 @@ CreateMatrixes(x)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (x)
-{
-  }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

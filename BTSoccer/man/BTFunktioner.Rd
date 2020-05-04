@@ -4,17 +4,23 @@
 \title{a
 %%  ~~function to do ... ~~
 }
-\description{
-Laver afledte til Rao Kupper modellen
+\description{Udregner de afledte samt loglikelihooden for Rao Kupper modellen
+%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
 BTFunktioner(x)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
+  \item{beta}{Koefficientvektor tilhørende styrkerne
 %%     ~~Describe \code{x} here~~
-}
+}\item{theta}{Uafgjort-grænseparameter
+
+}\item{x}{Designmatricen
+
+}\item{Y}{Kontingenstabllen
+
+}\item{r}Antal spillede kampe tabellen
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~

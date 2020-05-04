@@ -4,8 +4,7 @@
 \title{f
 %%  ~~function to do ... ~~
 }
-\description{f
-Udregner ssh. for at hold i vinder over hold j, ved givne styrker
+\description{Udregner sandsynligheden for at i vinder over j
 }
 \usage{
 Sandsynligheder(x)
@@ -13,7 +12,17 @@ Sandsynligheder(x)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-%%     ~~Describe \code{x} here~~
+Designmatricen
+}\item{theta}{
+Valgte theta
+}
+\item{styrker}{
+Styrkevektor tilhørende alle holdene i samme rækkefølge som søjlerner i x
+\item{i}{
+Hold i
+}
+}\item{j}{
+hold j
 }
 }
 \details{

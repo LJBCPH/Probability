@@ -4,8 +4,8 @@
 \title{d
 %%  ~~function to do ... ~~
 }
-\description{
-Laver Newton-Raphson approksimation tilh. den dynamiske model
+\description{d
+%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
 NR(x)
@@ -14,7 +14,18 @@ NR(x)
 \arguments{
   \item{x}{
 %%     ~~Describe \code{x} here~~
-}
+}\item{Beta}{Beta,Theta,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300
+Hvis indsat, estimerer den ikke Beta-parametrene
+}\item{Theta}{
+Hvis indsat, estimerer den ikke theta
+}\item{Sbeta}{
+Hvis indsat, saetter den startværdierne for Beta til at være den indsatte vektor
+}\item{Stheta}{
+Hvis indsat, saetter den startværdierne for Theta til at være den valgte vaerdi
+}\item{eps}{
+Praecisionsparametret
+}\item{MaxIte}{
+Antal max iterationer
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
