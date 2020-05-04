@@ -5,9 +5,6 @@ library(MASS) # Til invers af numerisk problematiske matricer
 library(blockmatrix) #matrixopsætning
 library(tidyr) #Til data transformation
 library(xtable) #Til Latex table
-install.packages("C:/Users/Victo/Documents/GitHub/Probability/BTSoccer",
-                 repos = NULL,
-                 type = "source")
 library(BTSoccer)
 library(ggplot2)
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
