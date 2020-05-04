@@ -43,7 +43,7 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   UnikHold <- cbind(unique(c(data1$H,data1$U)))
   UnikHold <- sort(UnikHold)
   streak <- c(rep(1,length(UnikHold)))
-  #Danner ikke-tab-streak
+  #Danner win-streak
   for (hold in 1:length(UnikHold)){
     StreakSum = 0
     for (kamp in 1:length(data1[,1])) {
@@ -134,6 +134,17 @@ BTFunktioner <- function(beta,theta,x,Y,r) {
     }
     return(sum)
   }
+  dbl <- function(beta,theta,x,l){
+    sum=0;
+    for(i in 1:(dim(x)[2]-1)){
+      for(j in (i+1):dim(x)[2]) {
+        sum = sum + (c(r[i,j]-Y[i,j])*(-(theta*exp(t(x[,i])%*%beta))/(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
+                     +c(r[i,j]-Y[j,i])*((theta*exp(t(x[,j])%*%beta))/(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))
+        )*(x[,i]-x[,j])
+      }
+    }
+    return(sum+c(rep(l,length(sum))))
+  }
   dtheta <- function(beta,theta,x) {
     sum = 0;
     for(i in 1:(dim(x)[2]-1)) {
@@ -184,7 +195,7 @@ BTFunktioner <- function(beta,theta,x,Y,r) {
     }
     return(sum)
   }
-  Funktions <- list("loglike" = logl,"dlbeta" = db,"dltheta" = dtheta,"dl2xtheta" = dtheta2,"dl2xbeta"= db2,"dlbetatheta" = dbt)
+  Funktions <- list("loglike" = logl,"dlbeta" = db,"dlassobeta"=dbl,"dltheta" = dtheta,"dl2xtheta" = dtheta2,"dl2xbeta"= db2,"dlbetatheta" = dbt)
   return(Funktions)
 }
 
