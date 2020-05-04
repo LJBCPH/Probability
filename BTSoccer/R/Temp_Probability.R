@@ -109,8 +109,8 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   return(Matrixes)
 }
 
-BTFunktioner <- function(beta,theta,x,Y,r) {
-  logl <- function(beta,theta,x){
+BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
+  logl <- function(beta,theta,lambda=0,x){
     sum=0;
     for (i in 1:(dim(x)[2]-1)){
       for (j in (i+1):(dim(x)[2])){
@@ -120,10 +120,10 @@ BTFunktioner <- function(beta,theta,x,Y,r) {
                                                                                        theta*exp(t(x[,j])%*%beta))-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
       }
     }
-    return(sum)
+    return(sum-sum(lambda*abs(beta)))
   }
 
-  db <- function(beta,theta,x){
+  db <- function(beta,theta,x,lambda=0){
     sum=0;
     for(i in 1:(dim(x)[2]-1)){
       for(j in (i+1):dim(x)[2]) {
@@ -132,7 +132,7 @@ BTFunktioner <- function(beta,theta,x,Y,r) {
         )*(x[,i]-x[,j])
       }
     }
-    return(sum)
+    return(sum-c(rep(lambda,length(sum))))
   }
   dbl <- function(beta,theta,x,l){
     sum=0;
@@ -199,7 +199,7 @@ BTFunktioner <- function(beta,theta,x,Y,r) {
   return(Funktions)
 }
 
-NR <- function(x,Beta,Theta,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300) {
+NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300) {
   if(missing(Sbeta)) {
     itebeta <- c(rep(0,dim(x)[1]))
   } else {
@@ -236,14 +236,14 @@ NR <- function(x,Beta,Theta,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300) {
         f <- BTFunktioner(x=x,Y=Y,r=r)
         if (runde == 2) {
           #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
-          t1 <- f$loglike(beta,theta,x)
+          t1 <- f$loglike(beta,theta,lambda,x)
           t2 <- f$dlbeta(beta,theta,x)
           t3 <- f$dltheta(beta,theta,x)
           t4 <- f$dl2xtheta(beta,theta,x)
           t5 <- f$dlbetatheta(beta,theta,x)
           t6 <- f$dl2xbeta(beta,theta,x)
         } else {
-          t1 <- t1 + f$loglike(beta,theta,x)
+          t1 <- t1 + f$loglike(beta,theta,lambda,x)
           t2 <- t2 + f$dlbeta(beta,theta,x)
           t3 <- t3 + f$dltheta(beta,theta,x)
           t4 <- t4 + f$dl2xtheta(beta,theta,x)
@@ -269,15 +269,15 @@ NR <- function(x,Beta,Theta,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300) {
         f <- BTFunktioner(x=x,Y=Y,r=r)
         if (runde == 3) {
           #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
-          t1 <- f$loglike(beta,theta,x)
-          t2 <- f$dlbeta(beta,theta,x)
+          t1 <- f$loglike(beta,theta,lambda,x)
+          t2 <- f$dlbeta(beta,theta,x,lambda)
           t3 <- f$dltheta(beta,theta,x)
           t4 <- f$dl2xtheta(beta,theta,x)
           t5 <- f$dlbetatheta(beta,theta,x)
           t6 <- f$dl2xbeta(beta,theta,x)
         } else {
-          t1 <- t1 + f$loglike(beta,theta,x)
-          t2 <- t2 + f$dlbeta(beta,theta,x)
+          t1 <- t1 + f$loglike(beta,theta,lambda,x)
+          t2 <- t2 + f$dlbeta(beta,theta,x,lambda)
           t3 <- t3 + f$dltheta(beta,theta,x)
           t4 <- t4 + f$dl2xtheta(beta,theta,x)
           t5 <- t5 + f$dlbetatheta(beta,theta,x)
@@ -301,7 +301,7 @@ NR <- function(x,Beta,Theta,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300) {
       break
     }
   }
-  cat("logl :",f$loglike(beta,theta,x),"\n","Iterations: ", counter)
+  cat("\n logl :",f$loglike(beta,theta,lambda,x),"\n lambda :",lambda,"\n","Iterations: ", counter,"\n")
   styrker <- exp(t(x)%*%beta);names(styrker) <- names(Y)
   KV <- inv(inf)
   U <- sqrt(diag(KV))
