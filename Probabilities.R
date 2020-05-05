@@ -7,6 +7,8 @@ library(tidyr) #Til data transformation
 library(xtable) #Til Latex table
 library(BTSoccer)
 library(ggplot2)
+library(psych) #pairs.panel
+
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
 setwd("C:/Users/lucas/Desktop/Odd")
 #Henter og verificerer data
@@ -16,12 +18,40 @@ data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
 m <- CreateMatrixes(data,"2015-07-17","2016-05-29",33)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-n <- NR(x=x,eps=0.001);beta <- n$beta;theta <- n$theta;
-sum(abs(beta))
+n <- NR(x=x,eps=0.001,lambda = 0.01,MaxIte = 100);beta <- n$beta;theta <- n$theta;
+#NR(x=x,eps=0.0001,Beta=beta,Theta=1.67,lambda = 0.1)
+beta <- c(rep(rnorm(1,0,0),12));
+theta <- 1.3;
+f <- BTFunktioner(beta,theta,lambda,x,Y,r)
+f$dl2xbeta(beta,theta,x)>0
+
+#b1 <- sum(abs(beta));beta1 <- beta #0
+#b2 <- sum(abs(beta));beta2 <- beta #1
+#b3 <- sum(abs(beta));beta3 <- beta #2
+#b4 <- sum(abs(beta));beta4 <- beta #3
+#b5 <- sum(abs(beta));beta5 <- beta #4
+#b6 <- sum(abs(beta));beta6 <- beta #5
+#b7 <- sum(abs(beta));beta7 <- beta #6
+#b8 <- sum(abs(beta));beta8 <- beta #7
+pairs.panels(x)
+
+round(beta1,4)#0
+round(beta2,4)#0.01
+round(beta4,4)#0.03
+round(beta5,4)#0.04
+round(beta3,4)#0.05
+sum(abs(beta1))#0
+sum(abs(beta2))#0.01
+sum(abs(beta3))#0.03
+sum(abs(beta4))#0.04
+sum(abs(beta5))#0.05
+sum(abs(beta6))#0.06
+sum(abs(beta7))#0.07
+
 alpha=33
 styrker = 0;y = 0;R=0;X=0;FF=0;SamlStyrker=0;
 for(alpha in 2:33){
-  styrker = 0;y = 0;R=0;X=0;FF=0;
+  styrker = 0;y = 0;R=0;X=0;FF=0;SumLike = 0;
   for (runde in 2:33){
   if(runde<=alpha){
     alphaback = 1
@@ -34,7 +64,7 @@ for(alpha in 2:33){
   styrker <- styrker+(exp(t(x)%*%beta));
   #SamlStyrker <- SamlStyrker + styrker
   toprint <- exp(t(x)%*%beta)/(min(exp(t(x)%*%beta)))
-  FF <- FF + f$loglike(beta,theta,x)
+  FF <- FF + f$loglike(beta,theta,0,x)
   R <- R + r
   y <- y + Y
   X <- X + x
