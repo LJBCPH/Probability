@@ -88,7 +88,7 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   }
 
   x <- as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
-  #x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
+  x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
   names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
   #Danner Antal-kampe-vektoren (r)
@@ -117,7 +117,7 @@ BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
         sum = sum + Y[i,j]*(t(x[,i])%*%beta-log(exp(t(x[,i])%*%beta)+theta*exp(t(x[,j])%*%beta)))+
           Y[j,i]*(t(x[,j])%*%beta-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))+
           (r[i,j]-Y[i,j]-Y[j,i])*(log(theta^2-1)+t(x[,i])%*%beta+t(x[,j])%*%beta-log(exp(t(x[,i])%*%beta)+
-                                                                                       theta*exp(t(x[,j])%*%beta))-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
+           theta*exp(t(x[,j])%*%beta))-log(exp(t(x[,j])%*%beta)+theta*exp(t(x[,i])%*%beta)))
       }
     }
     return(sum-sum(lambda*abs(beta)))
@@ -214,7 +214,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
   #ite = as.matrix(c(rep(0,dim(x)[1]),1.55));
   counter=0;val=1;StepHalv = 1/2;
   while(abs(val)>eps){
-    if(missing(Beta)){
+     if(missing(Beta)){
       beta = c(ite[1:(dim(x)[1])]);
     } else {
       beta = Beta
@@ -258,6 +258,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
       hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
       StepHalv = -1/4;
       temp = ite;
+      cat("Ude af mængden\n")
       ite = ite + inv(inf)%*%grad*StepHalv;
       val = sum(temp-ite);
       counter = counter +1;
@@ -269,27 +270,27 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
         f <- BTFunktioner(x=x,Y=Y,r=r)
         if (runde == 3) {
           #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
-          t1 <- f$loglike(beta,theta,lambda,x)
-          t2 <- f$dlbeta(beta,theta,x,lambda)
+          t1 <- f$loglike(beta,theta,0,x)
+          t2 <- f$dlbeta(beta,theta,x,0)
           t3 <- f$dltheta(beta,theta,x)
           t4 <- f$dl2xtheta(beta,theta,x)
           t5 <- f$dlbetatheta(beta,theta,x)
           t6 <- f$dl2xbeta(beta,theta,x)
         } else {
-          t1 <- t1 + f$loglike(beta,theta,lambda,x)
-          t2 <- t2 + f$dlbeta(beta,theta,x,lambda)
+          t1 <- t1 + f$loglike(beta,theta,0,x)
+          t2 <- t2 + f$dlbeta(beta,theta,x,0)
           t3 <- t3 + f$dltheta(beta,theta,x)
           t4 <- t4 + f$dl2xtheta(beta,theta,x)
           t5 <- t5 + f$dlbetatheta(beta,theta,x)
           t6 <- t6 + f$dl2xbeta(beta,theta,x)
         }
       }
-      f$t1 <- t1;f$t2 <- t2;f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6;
+      f$t1 <- t1-lambda*sum(beta^2);f$t2 <- t2-2*lambda*beta;f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda;
       a12 = as.matrix(f$t2);
       grad = rbind(a12,f$t3);
       A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
       hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-      StepHalv = 1/2;
+      StepHalv = 1/15;
       temp = ite;
       ite = ite + inv(inf)%*%grad*StepHalv;
       val = sum(temp-ite);
