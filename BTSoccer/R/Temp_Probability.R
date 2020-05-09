@@ -63,7 +63,16 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     }
     streak[hold] = StreakSum
   }
-
+  Random1 <- c(rep(rnorm(1,0),11),2)
+#  Random2 <- c(rep(rnorm(1,0),11),2)
+#  Random3 <- c(rep(rnorm(1,0),11),2)
+#  Random4 <- c(rep(rnorm(1,0),11),2)
+#  Random5 <- c(rep(rnorm(1,0),11),2)
+#  Random6 <- c(rep(rnorm(1,0),11),2)
+#  Random7 <- c(rep(rnorm(1,0),11),2)
+#  Random8 <- c(rep(rnorm(1,0),11),2)
+#  Random9 <- c(rep(rnorm(1,0),11),2)
+#  Random10 <- c(rep(rnorm(1,0),11),2)
   Mal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = sum)[,2])
   MalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = sum)[,2])
   GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = sum)[,2])/(round-1)
@@ -86,10 +95,11 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
       }
     }
   }
-
-  x <- as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
-  x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
-  names(x) <- names(Y)
+  x <- as.data.frame.matrix(rbind(Random1,HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+  #x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
+  x <- t(standard(t(x)))
+  x <- as.data.frame(x)
+  #names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
   #Danner Antal-kampe-vektoren (r)
   #rsamlet <- cbind.data.frame(data2$U,data2$H,rep(1,length(data2[,1])),rep(0,length(data2[,1])),rep(0,length(data2[,1])))
@@ -199,7 +209,7 @@ BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
   return(Funktions)
 }
 
-NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300) {
+NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,LambLimit = 0.0001,c = 0.01) {
   if(missing(Sbeta)) {
     itebeta <- c(rep(0,dim(x)[1]))
   } else {
@@ -210,15 +220,19 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
   } else {
     itetheta <- Stheta
   }
+  LassoRemoved <- 0
   ite = as.matrix(c(itebeta,itetheta))
   #ite = as.matrix(c(rep(0,dim(x)[1]),1.55));
   counter=0;val=1;StepHalv = 1/2;
   while(abs(val)>eps){
      if(missing(Beta)){
-      beta = c(ite[1:(dim(x)[1])]);
+      beta = c(ite[-length(ite)]);
+      cat("\nbta lange: ",length(beta),"\n")
     } else {
       beta = Beta
-    }
+      beta = c(ite[-length(ite)]);
+            cat("\nbta laasdsaddassadnge: ",length(beta),"\nbeta",beta)
+          }
     if(missing(Theta)){
       theta=ite[dim(x)[1]+1];
     } else {
@@ -228,7 +242,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
     #grad = rbind(a12,f$t3);
     #A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
     #hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-    if(counter > 1 && (-D < 0 || -A+B%*%D^(-1)%*%C < 0)){
+    if(counter > 1 && (-D < 0 || det(-A+B%*%D^(-1)%*%C) < 0)){
       cat("Ude af maengden, step tilbage",counter)
       for (runde in 2:33){
         m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
@@ -251,12 +265,12 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
           t6 <- t6 + f$dl2xbeta(beta,theta,x)
         }
       }
-      f$t1 <- t1;f$t2 <- t2;f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6;
+      f$t1 <- t1-lambda*sum(sqrt(beta^2+c^2));f$t2 <- t2-lambda*(beta/sqrt(beta^2+c^2));f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda*(c^2)/((beta^2+c^2)^(3/2));
       a12 = as.matrix(f$t2);
       grad = rbind(a12,f$t3);
       A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
       hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-      StepHalv = -1/4;
+      StepHalv = -1/200;
       temp = ite;
       cat("Ude af mængden\n")
       ite = ite + inv(inf)%*%grad*StepHalv;
@@ -267,6 +281,13 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
       for (runde in 3:33){
         m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
         x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
+        if(length(LassoRemoved)>1){
+          for(Remove in 1:length(LassoRemoved[-1])){
+            x <- x[-LassoRemoved[Remove+1],]
+         #   beta <- beta[-LassoRemoved[Remove+1]]
+            cat("\nFjernet elementt nr. ", LassoRemoved[Remove+1],"\n","x dim: ",dim(x[1]),"\nbeta length: ",length(beta),"\n")
+          }
+        }
         f <- BTFunktioner(x=x,Y=Y,r=r)
         if (runde == 3) {
           #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
@@ -285,17 +306,31 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300)
           t6 <- t6 + f$dl2xbeta(beta,theta,x)
         }
       }
-      f$t1 <- t1-lambda*sum(beta^2);f$t2 <- t2-2*lambda*beta;f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda;
+      f$t1 <- t1-lambda*sum(sqrt(beta^2+c^2));f$t2 <- t2-lambda*(beta/sqrt(beta^2+c^2));f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda*(c^2)/((beta^2+c^2)^(3/2));
       a12 = as.matrix(f$t2);
       grad = rbind(a12,f$t3);
       A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
       hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-      StepHalv = 1/15;
+      StepVector <- cbind(rep(0,200),1:200)
+      for(i in 1:200){
+        StepVector[i,1] <- sum(abs(ite-inv(inf)%*%grad*(1/i)));
+      }
+      StepHalv = 1/StepVector[which(StepVector[,1]==min(StepVector[,1])),2];
+      cat("\nStephalv",StepHalv,"\n")
       temp = ite;
-      ite = ite + inv(inf)%*%grad*StepHalv;
+      ite = ite + inv(inf)%*%grad*StepHalv; #NR STEP
       val = sum(temp-ite);
+      for (i in length(ite):1){
+        if (abs(ite[i])<LambLimit ){
+          LassoRemoved <- cbind(LassoRemoved,i)
+         # beta <- beta[-i]
+          ite <- ite[-i]
+          x <- x[-i,]
+          cat("\nFjernet element nr. ",i,"\nlængde ite",length(ite),"\n")
+        }
+      }
       counter = counter +1;
-      cat("\n",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
+      cat("\nVal",abs(val),"\ncounter",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
     }
     if(counter > MaxIte){
       cat("\n",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
