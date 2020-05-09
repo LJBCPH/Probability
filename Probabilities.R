@@ -8,6 +8,8 @@ library(xtable) #Til Latex table
 library(BTSoccer)
 library(ggplot2)
 library(psych) #pairs.panel
+library(glmnet)
+library(SSLASSO)
 
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
 setwd("C:/Users/lucas/Desktop/Odd")
@@ -16,43 +18,50 @@ data <- read.table("Kampe_r1.csv",header=T,sep=",")
 data$H <- as.character(data$H)
 data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
-m <- CreateMatrixes(data,"2015-07-17","2016-05-29",33)
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",30)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-n <- NR(x=x,eps=0.001,lambda = 0.01,MaxIte = 100);beta <- n$beta;theta <- n$theta;
-#NR(x=x,eps=0.0001,Beta=beta,Theta=1.67,lambda = 0.1)
-beta <- c(rep(rnorm(1,0,0),12));
-theta <- 1.3;
-f <- BTFunktioner(beta,theta,lambda,x,Y,r)
-f$dl2xbeta(beta,theta,x)>0
+Bsamlet <- beta;loglikesamlet = f$loglike(beta,theta,x=x,lambda=200);
+for (i in 1:20){
+n <- NR(x=x,Theta = 1.56,Sbeta <- beta,lambda=100,MaxIte=100,c = 0.1,LambLimit = 0.00009);beta <- n$beta;theta <- n$theta;
+Bsamlet <- cbind(Bsamlet,beta)
+#fix x til at være normal igne...
+loglikesamlet <- cbind(loglikesamlet,f$loglike(beta,theta,x=x,lambda=200))
+}
+colSums(Bsamlet)
+#startbeta = beta
+#b1 <- sum(abs(beta));beta1 <- beta #0, 0.01
+#b2 <- sum(abs(beta));beta2 <- beta #100, 0.01, 0.0001
+#b3 <- sum(abs(beta));beta3 <- beta #100,0.01, 0.001
+#b4 <- sum(abs(beta));beta4 <- beta #100,0.01, 0.01
+#b5 <- sum(abs(beta));beta5 <- beta #5
+#b6 <- sum(abs(beta));beta6 <- beta #10
+#b7 <- sum(abs(beta));beta7 <- beta #50
+#b8 <- sum(abs(beta));beta8 <- beta #100
+#b10 <- sum(abs(beta));beta10 <- beta #200
 
-#b1 <- sum(abs(beta));beta1 <- beta #0
-#b2 <- sum(abs(beta));beta2 <- beta #1
-#b3 <- sum(abs(beta));beta3 <- beta #2
-#b4 <- sum(abs(beta));beta4 <- beta #3
-#b5 <- sum(abs(beta));beta5 <- beta #4
-#b6 <- sum(abs(beta));beta6 <- beta #5
-#b7 <- sum(abs(beta));beta7 <- beta #6
-#b8 <- sum(abs(beta));beta8 <- beta #7
-pairs.panels(x)
+#b9 <- sum(abs(c(-0.004165379,-0.006490058,0.01298395,0.02560609,-0.01040849,0.02228864,-0.02562436,0.003375604,-0.007372631,-0.003303714,0.008619276,-0.01327128)));beta9 <- beta #100
 
 round(beta1,4)#0
-round(beta2,4)#0.01
+round(beta2,4)#0.00000001
 round(beta4,4)#0.03
 round(beta5,4)#0.04
 round(beta3,4)#0.05
-sum(abs(beta1))#0
-sum(abs(beta2))#0.01
-sum(abs(beta3))#0.03
-sum(abs(beta4))#0.04
-sum(abs(beta5))#0.05
-sum(abs(beta6))#0.06
-sum(abs(beta7))#0.07
+sum(abs(beta1))#25,c=0,1
+sum(abs(beta2))#100,c=0,01
+sum(abs(beta3))#0.3
+sum(abs(beta4))#2
+sum(abs(beta5))#5
+sum(abs(beta6))#10
+sum(abs(beta7))#50
+sum(abs(beta8))#100
+sum(abs(beta9))#200
+sum(abs(beta10))#200
 
 alpha=33
 styrker = 0;y = 0;R=0;X=0;FF=0;SamlStyrker=0;
 for(alpha in 2:33){
   styrker = 0;y = 0;R=0;X=0;FF=0;SumLike = 0;
-  for (runde in 2:33){
+  for (runde in 3:33){
   if(runde<=alpha){
     alphaback = 1
   } else {
@@ -73,6 +82,7 @@ for(alpha in 2:33){
 }
 styrknorm <- styrker/min(styrker)
 (styrknorm)[order(styrknorm),]
+(styrker/31)
 
 beta <- c(rep(0,length(x[1,])))
 n <- NR(x=x)
@@ -215,11 +225,11 @@ styrker = normstyrker;beta = n$beta;theta=n$theta;
 Sandsynligheder(beta,theta,x,1,2)
 beta = c(rep(0,length(x[,1])))
 NR(x=x)
-Lmle = -181.0983
-Lh0 = -198.0325
+Lmle = -190.6743
+Lh0 = -210.9386
 #LRT
 chi1 = -2*(Lh0-Lmle)
-chi2 = pchisq(chi1,12,lower = F);chi2
+chi2 = pchisq(chi1,12,lower = F);round(chi2,5)
 
 #Standardfejl på styrker
 dlpipi <- function(styrker,theta,Y,r,i){
@@ -238,8 +248,30 @@ dlpipj <- function(styrker,theta,Y,r,i,j){
       ((theta*(r[i,j]-Y[i,j]))/(styrker[j]+theta*styrker[i])^2)
   return(sum)
 }
+dlpi <- function(styrker,theta,Y,r,i){
+  sum=0;
+  for(j in 1:length(styrker)) {
+    if(j != i){
+      sum = sum + (r[i,j]-Y[i,j])/(styrker[i])-
+        (r[i,j]-Y[j,i])/(styrker[i]+theta*styrker[j])-
+        (theta*(r[i,j]-Y[i,j]))/(styrker[j]+theta*styrker[i])
+    }
+  }
+  return(sum)
+}
+dltheta <- function(styrker,theta,Y,r,i){
+  for(j in 1:length(styrker)){
+    if(j != i){
+      sum = sum + (2*theta(r[i,j]-Y[i,j]-Y[j,i]))/(theta^2-1)-
+              (styrker[i]*(r[i,j]-Y[j,i]))/(styrker[j]+theta*styrker[i])-
+              (styrker[j]*(r[i,j]-Y[i,j]))/(styrker[i]+theta*styrker[j])
+    }
+  }
+  return(sum)
+}
 #Laver matricen
 sdmat <- matrix(nc=length(styrker),nr=length(styrker));SamlStyrker = SamlStyrker/min(SamlStyrker)
+grad <- c(rep(0,length(styrker)))
 for(i in 1:length(SamlStyrker)){
   for(j in 1:length(styrker)){
     if(i == j){
@@ -247,11 +279,16 @@ for(i in 1:length(SamlStyrker)){
     }else {
       sdmat[i,j]= dlpipj(SamlStyrker,n$theta,y,R,i,j)
     }
-  }
+    }
+      grad[i] = dlpi(styrker,theta,Y,r,i)
 }
-sdsty <- sqrt(diag(inv(-sdmat)))
+#sdsty <- sqrt(diag(inv(-sdmat))) wrong?
+sdsty <- sqrt(diag(inv(-sdmat))) #richtig?
 names(sdsty) <- rownames(styrker)
-SamlStyrker
+t(grad)%*%inv(-sdmat)%*%grad
+grad
+SamlStyrker <- styrker
 sdsty
 #Done sd styrker
-
+deltaMethod(styrker,rownames(styrker),vcov.=inv(-sdmat))
+vcov(sdmat)
