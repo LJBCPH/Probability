@@ -159,7 +159,7 @@ BTFunktioner1 <- function(beta,theta,x,Y,r) {
 NR1 <- function(x,f,Beta) {
   ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;
   while(abs(val)>0.0000001){
-    if(ismissing(Beta)){
+    if(missing(Beta)){
     beta = c(ite[1:(dim(x)[1])]);
     } else {
     beta = Beta
@@ -197,9 +197,16 @@ x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe
 
 f <- BTFunktioner1(beta,theta,x,Y,r)
 n <- NR1(x,f)
+beta <- n$beta;theta<-n$theta
+styrker <- n$Styrker
+
 statstyrker <- n$Styrker/min(n$Styrker)
+n$sd
 b0 <- c(rep(0,length(n$beta)))
-f$loglike(b0,n$theta,x)
+lrh0 <- f$loglike(b0,1.637884,x);lrh0
+lrmle <- -190.6743
+-2*(lrh0-lrmle)
+
 round(n$beta,6)
 round(n$theta,6)
 round(n$sd,6)
