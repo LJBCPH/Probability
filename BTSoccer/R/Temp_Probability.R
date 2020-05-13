@@ -63,7 +63,7 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     }
     streak[hold] = StreakSum
   }
-  Random1 <- c(rep(rnorm(1,0),11),2)
+#  Random1 <- c(rep(rnorm(1,0),11),2)
 #  Random2 <- c(rep(rnorm(1,0),11),2)
 #  Random3 <- c(rep(rnorm(1,0),11),2)
 #  Random4 <- c(rep(rnorm(1,0),11),2)
@@ -95,11 +95,12 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
       }
     }
   }
-  x <- as.data.frame.matrix(rbind(Random1,HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+  x <- as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+  x <- x[-10,]
   #x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
   x <- t(standard(t(x)))
-  x <- as.data.frame(x)
-  #names(x) <- names(Y)
+#  x <- as.data.frame(t(scale(t(x))))
+  names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
   #Danner Antal-kampe-vektoren (r)
   #rsamlet <- cbind.data.frame(data2$U,data2$H,rep(1,length(data2[,1])),rep(0,length(data2[,1])),rep(0,length(data2[,1])))
@@ -212,6 +213,7 @@ BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
 NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,LambLimit = 0.0001,c = 0.01) {
   if(missing(Sbeta)) {
     itebeta <- c(rep(0,dim(x)[1]))
+    cat("\nbta lange: ",length(beta),"\n")
   } else {
     itebeta <- Sbeta
   }
@@ -225,13 +227,14 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
   #ite = as.matrix(c(rep(0,dim(x)[1]),1.55));
   counter=0;val=1;StepHalv = 1/2;
   while(abs(val)>eps){
+#    cat("\n\n Missing(Beta) = ",missing(Beta),"\n\n")
      if(missing(Beta)){
       beta = c(ite[-length(ite)]);
       cat("\nbta lange: ",length(beta),"\n")
     } else {
       beta = Beta
       beta = c(ite[-length(ite)]);
-            cat("\nbta laasdsaddassadnge: ",length(beta),"\nbeta",beta)
+#      cat("\nbta laasdsaddassadnge: ",length(beta),"\nbeta",beta)
           }
     if(missing(Theta)){
       theta=ite[dim(x)[1]+1];
@@ -244,48 +247,14 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
     #hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
     if(counter > 1 && (-D < 0 || det(-A+B%*%D^(-1)%*%C) < 0)){
       cat("Ude af maengden, step tilbage",counter)
-      for (runde in 2:33){
-        m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
-        x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-        f <- BTFunktioner(x=x,Y=Y,r=r)
-        if (runde == 2) {
-          #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
-          t1 <- f$loglike(beta,theta,lambda,x)
-          t2 <- f$dlbeta(beta,theta,x)
-          t3 <- f$dltheta(beta,theta,x)
-          t4 <- f$dl2xtheta(beta,theta,x)
-          t5 <- f$dlbetatheta(beta,theta,x)
-          t6 <- f$dl2xbeta(beta,theta,x)
-        } else {
-          t1 <- t1 + f$loglike(beta,theta,lambda,x)
-          t2 <- t2 + f$dlbeta(beta,theta,x)
-          t3 <- t3 + f$dltheta(beta,theta,x)
-          t4 <- t4 + f$dl2xtheta(beta,theta,x)
-          t5 <- t5 + f$dlbetatheta(beta,theta,x)
-          t6 <- t6 + f$dl2xbeta(beta,theta,x)
-        }
-      }
-      f$t1 <- t1-lambda*sum(sqrt(beta^2+c^2));f$t2 <- t2-lambda*(beta/sqrt(beta^2+c^2));f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda*(c^2)/((beta^2+c^2)^(3/2));
-      a12 = as.matrix(f$t2);
-      grad = rbind(a12,f$t3);
-      A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
-      hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-      StepHalv = -1/200;
-      temp = ite;
-      cat("Ude af mængden\n")
-      ite = ite + inv(inf)%*%grad*StepHalv;
-      val = sum(temp-ite);
-      counter = counter +1;
-      cat(counter)
-    } else {
       for (runde in 3:33){
         m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
         x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
         if(length(LassoRemoved)>1){
           for(Remove in 1:length(LassoRemoved[-1])){
             x <- x[-LassoRemoved[Remove+1],]
-         #   beta <- beta[-LassoRemoved[Remove+1]]
-            cat("\nFjernet elementt nr. ", LassoRemoved[Remove+1],"\n","x dim: ",dim(x[1]),"\nbeta length: ",length(beta),"\n")
+            #   beta <- beta[-LassoRemoved[Remove+1]]
+            #cat("\nFjernet elementt nr. ", LassoRemoved[Remove+1],"\n","x dim: ",dim(x[1]),"\nbeta length: ",length(beta),"\n")
           }
         }
         f <- BTFunktioner(x=x,Y=Y,r=r)
@@ -311,11 +280,11 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
       grad = rbind(a12,f$t3);
       A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
       hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-      StepVector <- cbind(rep(0,200),1:200)
-      for(i in 1:200){
+      StepVector <- cbind(rep(0,400),1:400)
+      for(i in 1:400){
         StepVector[i,1] <- sum(abs(ite-inv(inf)%*%grad*(1/i)));
       }
-      StepHalv = 1/StepVector[which(StepVector[,1]==min(StepVector[,1])),2];
+      StepHalv = -1/StepVector[which(StepVector[,1]==min(StepVector[,1])),2];
       cat("\nStephalv",StepHalv,"\n")
       temp = ite;
       ite = ite + inv(inf)%*%grad*StepHalv; #NR STEP
@@ -323,7 +292,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
       for (i in length(ite):1){
         if (abs(ite[i])<LambLimit ){
           LassoRemoved <- cbind(LassoRemoved,i)
-         # beta <- beta[-i]
+          # beta <- beta[-i]
           ite <- ite[-i]
           x <- x[-i,]
           cat("\nFjernet element nr. ",i,"\nlængde ite",length(ite),"\n")
@@ -331,16 +300,106 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
       }
       counter = counter +1;
       cat("\nVal",abs(val),"\ncounter",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
+    } else {
+      for (runde in 3:33){
+        m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+        x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
+        if(length(LassoRemoved)>1){
+          for(Remove in 1:length(LassoRemoved[-1])){
+            x <- x[-LassoRemoved[Remove+1],]
+         #   beta <- beta[-LassoRemoved[Remove+1]]
+            #cat("\nFjernet elementt nr. ", LassoRemoved[Remove+1],"\n","x dim: ",dim(x[1]),"\nbeta length: ",length(beta),"\n")
+          }
+        }
+        f <- BTFunktioner(x=x,Y=Y,r=r)
+        if (runde == 3) {
+          #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
+          t1 <- f$loglike(beta,theta,0,x)
+          t2 <- f$dlbeta(beta,theta,x,0)
+          t3 <- f$dltheta(beta,theta,x)
+          t4 <- f$dl2xtheta(beta,theta,x)
+          t5 <- f$dlbetatheta(beta,theta,x)
+          t6 <- f$dl2xbeta(beta,theta,x)
+        } else {
+          t1 <- t1 + f$loglike(beta,theta,0,x)
+          t2 <- t2 + f$dlbeta(beta,theta,x,0)
+          t3 <- t3 + f$dltheta(beta,theta,x)
+          t4 <- t4 + f$dl2xtheta(beta,theta,x)
+          t5 <- t5 + f$dlbetatheta(beta,theta,x)
+          t6 <- t6 + f$dl2xbeta(beta,theta,x)
+        }
+      }
+      f$t1 <- t1-lambda*sum(sqrt(beta^2+c^2));f$t2 <- t2-lambda*(beta/sqrt(beta^2+c^2));f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda*(c^2)/((beta^2+c^2)^(3/2));
+      a12 = as.matrix(f$t2);
+      grad = rbind(a12,f$t3);
+      A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
+      hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
+      #StepVector <- cbind(rep(0,100),1:100);
+      #########FINDING STEPLENGTH####################
+      FoundStepLength = FALSE;StepHalv = 100; i = 0;testloglike = 0;
+      #while (FoundStepLength == FALSE && counter >= 1){
+        while(i < 100 & FoundStepLength == FALSE & counter >=1){
+          testloglike <- 0
+          i = i+1
+          iteTest = ite + inv(inf)%*%grad*(1/i)
+          betaa <- c(iteTest[-length(iteTest)]);
+          thetaa=iteTest[dim(x)[1]+1];
+            for (runde in 3:33){
+            mm <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+            xx <- mm$DesignMatrix;YY <- mm$KontingensTabel; rr <- mm$SamledeKampe;
+            if(length(LassoRemoved)>1){
+              for(Remove in 1:length(LassoRemoved[-1])){
+                xx <- xx[-LassoRemoved[Remove+1],]
+              }
+            }
+              g <- BTFunktioner(x=xx,Y=YY,r=rr)
+              if (runde == 3) {
+                testloglike <- g$loglike(betaa,thetaa,0,xx)
+              } else {
+                testloglike <- testloglike + g$loglike(betaa,thetaa,0,xx)
+              }
+          }
+          #cat("\nNYLOGL: ",testloglike-lambda*sum(sqrt(betaa^2+c^2)),"\nGAMMEL LOGL: ",f$t1,"\n")
+            if (f$t1 < testloglike -lambda*sum(sqrt(betaa^2+c^2))){
+              StepHalv = i
+              FoundStepLength = TRUE
+           #   cat("\nFoundStep",1/StepHalv,"\n")
+            }
+       #   cat("\ni: ",i,"\n")
+          }
+      #}
+#      StepHalv = 1/StepVector[which(StepVector[,1]==min(StepVector[,1])),2];
+      cat("\nStephalv",1/StepHalv,"\n")
+      temp = ite;
+      ite = ite + inv(inf)%*%grad*(1/StepHalv); #NR STEP
+      val = sum(temp-ite);
+      for (i in length(ite):1){
+        #if (abs(ite[i])<LambLimit ){
+#          if (counter > 2 && lambda > 0 && (sign(ite[i])!=sign(temp[i]) || abs(ite[i]) < LambLimit)){
+        if (length(ite) > 2 && counter > 2 && lambda > 0 && ((abs(ite[i]) < LambLimit) || (sign(ite[i])!=sign(temp[i]) && abs(ite[i])<0.01))){
+      #  if (length(ite) > 2 && lambda > 0 && ((sign(ite[i])!=sign(temp[i]) || abs(ite[i])<LambLimit))){
+                   LassoRemoved <- cbind(LassoRemoved,i)
+            # beta <- beta[-i]
+            ite <- ite[-i]
+            x <- x[-i,]
+            cat("\nFjernet element nr. ",i,"\nlængde ite",length(ite),"\n")
+          }
+      }
+      loglike = f$t1
+      counter = counter +1;
+      cat("\nVal",abs(val),"\ncounter",counter,"\n","Likelihood:",loglike,"\n Beta",beta,"\n theta",theta)
     }
     if(counter > MaxIte){
       cat("\n",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
       break
     }
   }
+
   cat("\n logl :",f$loglike(beta,theta,lambda,x),"\n lambda :",lambda,"\n","Iterations: ", counter,"\n")
   styrker <- exp(t(x)%*%beta);names(styrker) <- names(Y)
   KV <- inv(inf)
   U <- sqrt(diag(KV))
+  names(beta) <- rownames(x)
   Values = list("beta" = beta, "theta" = theta,"styrker" = styrker,"sd" = U)
   return(Values)
 }
