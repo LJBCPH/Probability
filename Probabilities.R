@@ -20,26 +20,98 @@ data$U <- as.character(data$U)
 data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
 m <- CreateMatrixes(data,"2015-07-17","2016-05-29",30)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-Bsamlet <- beta;loglikesamlet = f$loglike(beta,theta,x=x,lambda=200);
-for (i in 1:20){
-n <- NR(x=x,Theta = 1.56,Sbeta <- beta,lambda=100,MaxIte=100,c = 0.1,LambLimit = 0.00009);beta <- n$beta;theta <- n$theta;
-Bsamlet <- cbind(Bsamlet,beta)
-#fix x til at være normal igne...
-loglikesamlet <- cbind(loglikesamlet,f$loglike(beta,theta,x=x,lambda=200))
-}
+n <- NR(x=x,,Stheta = 1.57,Sbeta = startbeta[-10],lambda=25,MaxIte = 600,eps = 0.0000001,LambLimit = 10^(-4),c = 0.000000000000000001);beta <- n$beta;theta <- n$theta;
+#b0 <- sum(abs(startbeta));beta0 <- startbeta #0, -181.968, 12 beta
+#b05 <- sum(abs(beta));beta05 <- beta #1 -182.8425, 11 beta
+#b075 <- sum(abs(beta));beta075 <- beta #2 -183.0041, 10 beta
+#b1 <- sum(abs(beta));beta1 <- beta #3  -183.5719, 9 beta
+#b125 <- sum(abs(beta));beta125 <- beta #3  -183.8938, 9 beta
+#b15 <- sum(abs(beta));beta15 <- beta #3 -184.1924, 8 beta
+#b2 <- sum(abs(beta));beta2 <- beta #4, -184.7497, 8 beta
+#b25 <- sum(abs(beta));beta25 <- beta, #-185.2661, 7 beta
+#b3 <- sum(abs(beta));beta3 <- beta, #-185.7535, 7 beta
+#b35 <- sum(abs(beta));beta35 <- beta #10, -186.2123, 7 beta
+#b4 <- sum(abs(beta));beta4 <- beta #15, -186.6428, 7 beta
+#b45 <- sum(abs(beta));beta45 <- beta #15, -186.0451, 6 beta
+#b5 <- sum(abs(beta));beta5 <- beta #20, -187.43, 5 beta
+#b6 <- sum(abs(beta));beta6 <- beta #25, -188.1695, 5 beta
+#b10 <- sum(abs(beta));beta10 <- beta #30, -190.7334, 5 beta
+#b125 <- sum(abs(beta));beta125 <- beta #85,-192.1757, 4 beta
+#b15 <- sum(abs(beta));beta15 <- beta #85,-190.7295, 3 beta
+#b175 <- sum(abs(beta));beta175 <- beta #85,-192.2547, 3 beta
+#b20 <- sum(abs(beta));beta20 <- beta #85,-194.8933, 3 beta
+#b205 <- sum(abs(beta));beta205 <- beta #16,-193.4999, 2 beta
+##b17 <- sum(abs(beta));beta17 <- beta #125, 0.0000000000001,0,-193.9977, 3 beta
+#b18 <- sum(abs(beta));beta18 <- beta #150, 0.0000000000001, 0, -194.3907, 3 beta
+##b19 <- sum(abs(beta));beta19 <- beta #50, 0.00000001, 0, -194.6659, 3 beta
+#b20 <- sum(abs(beta));beta20 <- beta #50, 0.000000001, 0, -194.9399, 3 beta
+#b22 <- sum(abs(beta));beta22 <- beta #50, 0.0000000000001, 0 ,-195.4818 , 3 beta
+#b25 <- sum(abs(beta));beta25 <- beta #50, 0.0000000000001, 0 ,-195.4818 , 2 beta
+#b25 <- sum(abs(beta));beta25 <- beta #50, 0.0000000000001, 0 ,-197.0296 , 2 beta
+#beta35 <- c(0.01903043)
+
 colSums(Bsamlet)
 #startbeta = beta
-#b1 <- sum(abs(beta));beta1 <- beta #0, 0.01
-#b2 <- sum(abs(beta));beta2 <- beta #100, 0.01, 0.0001
-#b3 <- sum(abs(beta));beta3 <- beta #100,0.01, 0.001
-#b4 <- sum(abs(beta));beta4 <- beta #100,0.01, 0.01
-#b5 <- sum(abs(beta));beta5 <- beta #5
-#b6 <- sum(abs(beta));beta6 <- beta #10
-#b7 <- sum(abs(beta));beta7 <- beta #50
-#b8 <- sum(abs(beta));beta8 <- beta #100
-#b10 <- sum(abs(beta));beta10 <- beta #200
+LambdaValues <- c(0,0.5,1,1.5,2,3,3.5,4,5,6,7,10,13,13.5,16,18,20,22,25)
+n <- length(beta0)
+#fixer length
+#length(beta075) <- n
+#length(Beta0) <- n
+#names(beta4) <- c("FifaRating")
+beta1
+Beta075 <- as.data.frame(beta075,row.names = names(beta075))
+BetaList <- list(Beta0,Beta075,Beta1,Beta15,Beta2,Beta3,Beta4,Beta5,Beta6,Beta7,Beta10,Beta13,Beta135,Beta16,Beta18,Beta20,Beta22,Beta25,Beta35)
+#multimerge(BetaList)
+#unique(unlist(lapply(BetaList, rownames)))
+#library(plyr)
+#join_all(BetaList,type="full")
+for(i in 1:length(BetaList)){
+  colnames(BetaList[[i]]) <- paste0( names(BetaList)[i], "_", colnames(BetaList[[i]]) )
+  BetaList[[i]]$ROWNAMES  <- rownames(BetaList[[i]])
+}
 
-#b9 <- sum(abs(c(-0.004165379,-0.006490058,0.01298395,0.02560609,-0.01040849,0.02228864,-0.02562436,0.003375604,-0.007372631,-0.003303714,0.008619276,-0.01327128)));beta9 <- beta #100
+m1 <- merge(BetaList[1],BetaList[2],by="ROWNAMES",all=T)
+for(i in 3:20){
+m1 <- merge(m1,BetaList[i],by="ROWNAMES",all=T)
+m1 <- m1[(length(m1[,1])-11):length(m1[,1]),]
+}
+m2 <- m1[-16]
+m2 <- m2[-4]
+m2[is.na(m2)] = 0
+m3 <- as.data.frame(t(m2))
+colnames(m3) = m2$ROWNAMES
+m3 <- m3[-1,]
+m3 <- as.data.frame(m3)
+m3$Lambda <- as.numeric(row.names(m3))
+m4 <- melt(m3,id.vars="Lambda")
+m4$value <- as.numeric(m4$value)
+ggplot(m4, aes(Lambda,value, col=variable)) +
+  geom_line() + geom_hline()
+
+#b0 <- sum(abs(beta));beta0 <- beta #0, 0.0000000000001, -181.968, 12 beta
+#b075 <- sum(abs(beta));beta075 <- beta #1 0.000000000001, 0, -182.1556, 11 beta
+#b1 <- sum(abs(beta));beta1 <- beta #2 0.000000000001, 0, -183.5661, 10 beta
+#b15 <- sum(abs(beta));beta15 <- beta #3 0.000000000001, 0, -184.189, 10 beta
+#b2 <- sum(abs(beta));beta2 <- beta #3 0.000000000001, 0, -184.7619, 9 beta
+##b25 <- sum(abs(beta));beta25 <- beta #4, 0.000000000001, 0, -185.2501, 8 beta
+#b3 <- sum(abs(beta));beta3 <- beta #5, 0.000000000001, 0, -185.7342, 8 beta
+##b35 <- sum(abs(beta));beta35 <- beta #10, 0.000000000001, 0, -186.1894, 8 beta
+#b4 <- sum(abs(beta));beta4 <- beta #15, 0.000000000001, 0, -186.6159, 7 beta
+#b5 <- sum(abs(beta));beta5 <- beta #20,0.0000000000001, 0, -187.4058, 6 beta
+#b6 <- sum(abs(beta));beta6 <- beta #25,0.0000000000001, 0, -188.1516, 6 beta
+#b7 <- sum(abs(beta));beta7 <- beta #30,0.0000000000001, 0, , 6 beta
+#b10 <- sum(abs(beta));beta10 <- beta #85, 0.000000000001,0,-190.7295, 6 beta
+#b13 <- sum(abs(beta));beta13 <- beta #85, 0.000000000001,0,-192.2547, 5 beta
+#b135 <- sum(abs(beta));beta135 <- beta #85, 0.000000000001,0,-192.4757, 4 beta
+#b16 <- sum(abs(beta));beta16 <- beta #16, 0.0000000000001, 0,-193.4999, 4 beta
+##b17 <- sum(abs(beta));beta17 <- beta #125, 0.0000000000001,0,-193.9977, 3 beta
+#b18 <- sum(abs(beta));beta18 <- beta #150, 0.0000000000001, 0, -194.3907, 3 beta
+##b19 <- sum(abs(beta));beta19 <- beta #50, 0.00000001, 0, -194.6659, 3 beta
+#b20 <- sum(abs(beta));beta20 <- beta #50, 0.000000001, 0, -194.9399, 3 beta
+#b22 <- sum(abs(beta));beta22 <- beta #50, 0.0000000000001, 0 ,-195.4818 , 3 beta
+#b25 <- sum(abs(beta));beta25 <- beta #50, 0.0000000000001, 0 ,-195.4818 , 2 beta
+#b25 <- sum(abs(beta));beta25 <- beta #50, 0.0000000000001, 0 ,-197.0296 , 2 beta
+#beta35 <- c(0.01903043)
 
 round(beta1,4)#0
 round(beta2,4)#0.00000001
