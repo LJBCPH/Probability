@@ -191,7 +191,8 @@ for(alpha in 2:33){
   R <- R + r
   y <- y + Y
   X <- X + x
-}
+  }
+
   #cat(alpha,"   ",FF,"\n",names(x),"\n",styrker/min(styrker),"\n")
 }
 styrknorm <- styrker/min(styrker)
@@ -406,3 +407,11 @@ sdsty
 #Done sd styrker
 deltaMethod(styrker,rownames(styrker),vcov.=inv(-sdmat))
 vcov(sdmat)
+##################
+n <- NR(x=x,lambda=0,RoundList = c(3:33),MaxIte = 600,eps = 0.0000001,LambLimit = 10^(-4),c = 10^(-100))
+
+beta <- n$beta;theta <- n$theta;names(beta)=rownames(x)
+sfb<-n$sd;names(sfb)=rownames(x)
+m <- CreateMatrixes(data,"2015-07-17","2016-05-29",30)
+x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe
+n$styrkgemt/31

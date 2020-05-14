@@ -3,7 +3,7 @@ require(blockmatrix) #matrixopsætning
 require(tidyr) #Til data transformation
 rm(list=ls())
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
-data <- read.table("Kampe_r1 2.csv",header=T,sep=",")
+data <- read.table("Kampe_r1.csv",header=T,sep=",")
 data <- read.table(file.choose(),header=T,sep=",")
 CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
   #fikser datatypes
@@ -67,8 +67,10 @@ CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
   GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
   #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
   #TeamRatings <- c(65,65,66,65,71,69,63,63,64,66,66,63)
-  TeamRatings <- c(65,66,65,71,69,63,63,64,66,66,63,65)
+  TeamRatings <- c(65,67,65,71,69,64,64,64,66,65,63,66)
   x <- as.data.frame.matrix(rbind(TeamRatings,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
+  x <- t(standard(t(x)))
+  x <- as.data.frame.matrix(x)
   names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
   #Danner Antal-kampe-vektoren (r)
@@ -180,6 +182,7 @@ NR1 <- function(x,f,Beta) {
   }
   cat("logl :",f$loglike(beta,theta,x))
   styrker <- exp(t(x)%*%beta)
+  rownames(styrker)=na.omit(names(x))
   KV <- inv(inf)
   U <- sqrt(diag(KV))
   Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U,"KV"=KV)
@@ -201,8 +204,12 @@ data
 f <- BTFunktioner1(beta,theta,x,Y,r)
 n <- NR1(x,f)
 beta <- n$beta;theta<-n$theta
-styrker <- n$Styrker
+names(beta)=rownames(x)
+n$sd
+betas #<- beta
 
+styrker <- n$Styrker
+styrker/styrker[7]
 statstyrker <- n$Styrker/min(n$Styrker)
 b0 <- c(rep(0,length(n$beta)))
 lrh0 <- f$loglike(b0,1.637884,x);lrh0
@@ -225,8 +232,11 @@ sfagf <-sqrt(varagf);sfagf#standardfejl på AGFs styrke
 
 #Styrker og standardfejl ift Hobro:
 #x <- x-x[,7]
+#sqrt(diag(n$KV))
 varbeta <- n$KV[-11,-11]#varians på betaer
-#sqrt(diag(varbeta))#Standardfejl på betaer
+sfb <- sqrt(diag(varbeta));names(sfb)=names(beta)#Standardfejl på betaer
+round(beta,3)
+round(sfb,3)
 #t(x[,1])%*%beta #log(AGFs styrke)
 #vlpi1<- t(x[,1])%*%varbeta%*%x[,1]#Varians på log(AGF)
 #sfls <-sqrt(diag(vlpi1));sfls#Standardfejl på log(AGF)
@@ -242,7 +252,7 @@ for (i in 1:12){
   varpiH[i]= exp(t(x[,i])%*%beta)%*%(t(x[,i])%*%varbeta%*%x[,i])%*%exp(t(x[,i])%*%beta)
 }
 sfpiH <- sqrt(varpiH);
-piH#styrker
-names(varpiH)=names(x);names(sfpiH)=names(x)
-varpiH#varians
-sfpiH#standardfejl
+names(varpiH)=names(x);names(sfpiH)=names(x);names(piH)=names(x)
+round(piH,3)#styrker
+round(varpiH,3)#varians
+round(sfpiH,3)#standardfejl
