@@ -8,7 +8,7 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   data$U <- as.character(data$U)
   data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
   #Henter 1.5 sæson ud:
-  #StartDate = "2015-07-17";EndDate = "2016-05-29";round = 2;
+  #StartDate = "2015-07-17";EndDate = "2016-05-29";round = 20;
   data2 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde == round)),]
   data1 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde < round)),]
   #data1 <- data1[(data1$H %in% data2$H) | (data1$U %in% data2$U),];
@@ -96,10 +96,11 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     }
   }
   x <- as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
-  x <- x[-10,]
+#  x <- x[-10,]
   #x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
   x <- t(standard(t(x)))
 #  x <- as.data.frame(t(scale(t(x))))
+ # x <- as.data.frame(x)
   names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
   #Danner Antal-kampe-vektoren (r)
@@ -210,7 +211,7 @@ BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
   return(Funktions)
 }
 
-NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,LambLimit = 0.0001,c = 0.01) {
+NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,MaxIte = 300,LambLimit = 0.0001,c = 0.01) {
   if(missing(Sbeta)) {
     itebeta <- c(rep(0,dim(x)[1]))
     cat("\nbta lange: ",length(beta),"\n")
@@ -301,7 +302,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
       counter = counter +1;
       cat("\nVal",abs(val),"\ncounter",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
     } else {
-      for (runde in 3:33){
+      for (runde in RoundList){
         m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
         x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
         if(length(LassoRemoved)>1){
@@ -344,7 +345,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
           iteTest = ite + inv(inf)%*%grad*(1/i)
           betaa <- c(iteTest[-length(iteTest)]);
           thetaa=iteTest[dim(x)[1]+1];
-            for (runde in 3:33){
+            for (runde in RoundList){
             mm <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
             xx <- mm$DesignMatrix;YY <- mm$KontingensTabel; rr <- mm$SamledeKampe;
             if(length(LassoRemoved)>1){
@@ -359,7 +360,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,eps = 0.00000001,MaxIte = 300,
                 testloglike <- testloglike + g$loglike(betaa,thetaa,0,xx)
               }
           }
-          #cat("\nNYLOGL: ",testloglike-lambda*sum(sqrt(betaa^2+c^2)),"\nGAMMEL LOGL: ",f$t1,"\n")
+         # cat("\nNYLOGL: ",testloglike-lambda*sum(sqrt(betaa^2+c^2)),"\nGAMMEL LOGL: ",f$t1,"\n")
             if (f$t1 < testloglike -lambda*sum(sqrt(betaa^2+c^2))){
               StepHalv = i
               FoundStepLength = TRUE
