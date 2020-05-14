@@ -1,7 +1,10 @@
 require(matlib) #Til vektor/matrix regning
 require(blockmatrix) #matrixopsætning
 require(tidyr) #Til data transformation
-
+rm(list=ls())
+setwd("C:/Users/Victo/Desktop/bachelor/kode")
+data <- read.table("Kampe_r1 2.csv",header=T,sep=",")
+data <- read.table(file.choose(),header=T,sep=",")
 CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
   #fikser datatypes
   data$H <- as.character(data$H)
@@ -53,7 +56,6 @@ CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
     }
     streak[hold] = StreakSum
   }
-x
   GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = sum)[,2])
   GnsMalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = sum)[,2])
   GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
@@ -64,7 +66,8 @@ x
   GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
   GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
   #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-  TeamRatings <- c(65,65,66,65,71,69,63,63,64,66,66,63)
+  #TeamRatings <- c(65,65,66,65,71,69,63,63,64,66,66,63)
+  TeamRatings <- c(65,66,65,71,69,63,63,64,66,66,63,65)
   x <- as.data.frame.matrix(rbind(TeamRatings,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
   names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
@@ -75,7 +78,7 @@ x
   Matrixes <- list("DesignMatrix" = x,"KontingensTabel" = Y,"SamledeKampe" = r)
   return(Matrixes)
 }
-
+str(data)
 BTFunktioner1 <- function(beta,theta,x,Y,r) {
   logl <- function(beta,theta,x){
     sum=0;
@@ -194,7 +197,7 @@ Sandsynligheder1 <- function(beta,theta,x,i,j){
 
 m <- CreateMatrixes1(data,"2015-07-17","2016-05-29",0)
 x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe
-
+data
 f <- BTFunktioner1(beta,theta,x,Y,r)
 n <- NR1(x,f)
 beta <- n$beta;theta<-n$theta
@@ -210,4 +213,16 @@ lrmle <- -190.6743
 round(n$beta,6)
 round(n$theta,6)
 round(n$sd,6)
+#standardfejl for styrker
+f$dl2xbeta(beta,theta,x)
+varbeta <-inv(-f$dl2xbeta(beta,theta,x))#varians på beta.hat'erne
+sqrt(diag(varbeta))#Standardfejl på beta.hat'erne
+t(x[,1])%*%beta #log(AGFs styrke)
+vlpi1<- t(x[,1])%*%varbeta%*%x[,1]#Varians på log(AGF)
+sqrt(diag(vlpi1))#Standardfejl på log(AGF)
+piagf <- exp(x[,1]%*%beta);piagf#AGFs styrke
+varagf <- exp(t(x[,1])%*%beta)%*%(t(x[,1])%*%varbeta%*%x[,1])%*%exp(t(x[,1])%*%beta);varagf#Varians på AGFs styrke
+sfagf <-sqrt(vpi1);sfagf#standardfejl på AGFs styrke
+
+sfb
 
