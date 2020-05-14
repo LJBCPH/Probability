@@ -83,7 +83,9 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
   GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
   #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-  TeamRatings <- c(66,65,67,65,71,69,64,64,64,66,65,63)
+  ##TeamRatings <- c(66,65,67,65,71,69,64,64,64,66,65,63)
+  #TeamRatings <- c(65,66,65,71,69,63,63,64,66,66,63,65)
+  TeamRatings <- c(65,67,65,71,69,64,64,64,66,65,63,66)
   TeamRatings <- cbind(c(UnikHold),TeamRatings)
   TeamRatings <- TeamRatings[TeamRatings[,1] %in% UnikHold,];
   FifaRating <- as.numeric(TeamRatings[,2])
@@ -98,7 +100,7 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   x <- as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
 #  x <- x[-10,]
   #x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
-  x <- t(standard(t(x)))
+  #x <- t(standard(t(x)))
 #  x <- as.data.frame(t(scale(t(x))))
  # x <- as.data.frame(x)
   names(x) <- names(Y)
