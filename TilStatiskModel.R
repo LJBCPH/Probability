@@ -182,7 +182,7 @@ NR1 <- function(x,f,Beta) {
   styrker <- exp(t(x)%*%beta)
   KV <- inv(inf)
   U <- sqrt(diag(KV))
-  Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U)
+  Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U,"KV"=KV)
   return(Values)
 }
 
@@ -204,7 +204,6 @@ beta <- n$beta;theta<-n$theta
 styrker <- n$Styrker
 
 statstyrker <- n$Styrker/min(n$Styrker)
-n$sd
 b0 <- c(rep(0,length(n$beta)))
 lrh0 <- f$loglike(b0,1.637884,x);lrh0
 lrmle <- -190.6743
@@ -214,15 +213,36 @@ round(n$beta,6)
 round(n$theta,6)
 round(n$sd,6)
 #standardfejl for styrker
-f$dl2xbeta(beta,theta,x)
-varbeta <-inv(-f$dl2xbeta(beta,theta,x))#varians på beta.hat'erne
-sqrt(diag(varbeta))#Standardfejl på beta.hat'erne
+varbeta <- n$KV[-11,-11]#varians på betaer
+sqrt(diag(varbeta))#Standardfejl på betaer
 t(x[,1])%*%beta #log(AGFs styrke)
 vlpi1<- t(x[,1])%*%varbeta%*%x[,1]#Varians på log(AGF)
 sqrt(diag(vlpi1))#Standardfejl på log(AGF)
 piagf <- exp(x[,1]%*%beta);piagf#AGFs styrke
 varagf <- exp(t(x[,1])%*%beta)%*%(t(x[,1])%*%varbeta%*%x[,1])%*%exp(t(x[,1])%*%beta);varagf#Varians på AGFs styrke
-sfagf <-sqrt(vpi1);sfagf#standardfejl på AGFs styrke
+sfagf <-sqrt(varagf);sfagf#standardfejl på AGFs styrke
 
-sfb
 
+#Styrker og standardfejl ift Hobro:
+#x <- x-x[,7]
+varbeta <- n$KV[-11,-11]#varians på betaer
+#sqrt(diag(varbeta))#Standardfejl på betaer
+#t(x[,1])%*%beta #log(AGFs styrke)
+#vlpi1<- t(x[,1])%*%varbeta%*%x[,1]#Varians på log(AGF)
+#sfls <-sqrt(diag(vlpi1));sfls#Standardfejl på log(AGF)
+#varpi <- exp(t(x[,1])%*%beta)%*%(t(x[,1])%*%varbeta%*%x[,1])%*%exp(t(x[,1])%*%beta);varagf#Varians på AGFs styrke
+#sfagf <-sqrt(varagf);sfagf#standardfejl på AGFs styrke
+#exp(t(x[,1])%*%beta)*sfls
+
+x <- x-x[,7];piH <- c(rep(1,12));varpiH <- c(rep(1,12));varbeta <- n$KV[-11,-11];
+for (i in 1:12){
+  piH[i]=exp(x[,i]%*%beta)
+}
+for (i in 1:12){
+  varpiH[i]= exp(t(x[,i])%*%beta)%*%(t(x[,i])%*%varbeta%*%x[,i])%*%exp(t(x[,i])%*%beta)
+}
+sfpiH <- sqrt(varpiH);
+piH#styrker
+names(varpiH)=names(x);names(sfpiH)=names(x)
+varpiH#varians
+sfpiH#standardfejl
