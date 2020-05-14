@@ -1,7 +1,10 @@
 require(matlib) #Til vektor/matrix regning
 require(blockmatrix) #matrixopsætning
 require(tidyr) #Til data transformation
-
+rm(list=ls())
+setwd("C:/Users/Victo/Desktop/bachelor/kode")
+data <- read.table("Kampe_r1 2.csv",header=T,sep=",")
+data <- read.table(file.choose(),header=T,sep=",")
 CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
   #fikser datatypes
   data$H <- as.character(data$H)
@@ -53,7 +56,6 @@ CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
     }
     streak[hold] = StreakSum
   }
-
   GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = sum)[,2])
   GnsMalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = sum)[,2])
   GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
@@ -64,7 +66,8 @@ CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
   GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
   GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
   #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-  TeamRatings <- c(66,65,66,65,71,69,63,63,64,66,66,63)
+  #TeamRatings <- c(65,65,66,65,71,69,63,63,64,66,66,63)
+  TeamRatings <- c(65,66,65,71,69,63,63,64,66,66,63,65)
   x <- as.data.frame.matrix(rbind(TeamRatings,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
   names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
@@ -75,7 +78,7 @@ CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
   Matrixes <- list("DesignMatrix" = x,"KontingensTabel" = Y,"SamledeKampe" = r)
   return(Matrixes)
 }
-
+str(data)
 BTFunktioner1 <- function(beta,theta,x,Y,r) {
   logl <- function(beta,theta,x){
     sum=0;
@@ -179,7 +182,7 @@ NR1 <- function(x,f,Beta) {
   styrker <- exp(t(x)%*%beta)
   KV <- inv(inf)
   U <- sqrt(diag(KV))
-  Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U)
+  Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U,"KV"=KV)
   return(Values)
 }
 
@@ -192,16 +195,15 @@ Sandsynligheder1 <- function(beta,theta,x,i,j){
   return(VTU)
 }
 
-mMM <- CreateMatrixes1(datatest1,"2015-07-17","2016-05-29",0)
-xXXXXXx <- mMM$DesignMatrix;Y<-mMM$KontingensTabel;r<-mMM$SamledeKampe
-as.matrix(xXXXXXx)
-f2 <- BTFunktioner1(beta,theta,xXXXXXx,Y,r)
-ntest <- NR1(xXXXXXx,f2)
+m <- CreateMatrixes1(data,"2015-07-17","2016-05-29",0)
+x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe
+data
+f <- BTFunktioner1(beta,theta,x,Y,r)
+n <- NR1(x,f)
 beta <- n$beta;theta<-n$theta
 styrker <- n$Styrker
 
 statstyrker <- n$Styrker/min(n$Styrker)
-n$sd
 b0 <- c(rep(0,length(n$beta)))
 lrh0 <- f$loglike(b0,1.637884,x);lrh0
 lrmle <- -190.6743
@@ -210,4 +212,37 @@ lrmle <- -190.6743
 round(n$beta,6)
 round(n$theta,6)
 round(n$sd,6)
+#standardfejl for styrker
+varbeta <- n$KV[-11,-11]#varians på betaer
+sqrt(diag(varbeta))#Standardfejl på betaer
+t(x[,1])%*%beta #log(AGFs styrke)
+vlpi1<- t(x[,1])%*%varbeta%*%x[,1]#Varians på log(AGF)
+sqrt(diag(vlpi1))#Standardfejl på log(AGF)
+piagf <- exp(x[,1]%*%beta);piagf#AGFs styrke
+varagf <- exp(t(x[,1])%*%beta)%*%(t(x[,1])%*%varbeta%*%x[,1])%*%exp(t(x[,1])%*%beta);varagf#Varians på AGFs styrke
+sfagf <-sqrt(varagf);sfagf#standardfejl på AGFs styrke
 
+
+#Styrker og standardfejl ift Hobro:
+#x <- x-x[,7]
+varbeta <- n$KV[-11,-11]#varians på betaer
+#sqrt(diag(varbeta))#Standardfejl på betaer
+#t(x[,1])%*%beta #log(AGFs styrke)
+#vlpi1<- t(x[,1])%*%varbeta%*%x[,1]#Varians på log(AGF)
+#sfls <-sqrt(diag(vlpi1));sfls#Standardfejl på log(AGF)
+#varpi <- exp(t(x[,1])%*%beta)%*%(t(x[,1])%*%varbeta%*%x[,1])%*%exp(t(x[,1])%*%beta);varagf#Varians på AGFs styrke
+#sfagf <-sqrt(varagf);sfagf#standardfejl på AGFs styrke
+#exp(t(x[,1])%*%beta)*sfls
+
+x <- x-x[,7];piH <- c(rep(1,12));varpiH <- c(rep(1,12));varbeta <- n$KV[-11,-11];
+for (i in 1:12){
+  piH[i]=exp(x[,i]%*%beta)
+}
+for (i in 1:12){
+  varpiH[i]= exp(t(x[,i])%*%beta)%*%(t(x[,i])%*%varbeta%*%x[,i])%*%exp(t(x[,i])%*%beta)
+}
+sfpiH <- sqrt(varpiH);
+piH#styrker
+names(varpiH)=names(x);names(sfpiH)=names(x)
+varpiH#varians
+sfpiH#standardfejl
