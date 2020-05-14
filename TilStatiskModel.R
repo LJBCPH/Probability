@@ -53,7 +53,7 @@ CreateMatrixes1 <- function(data,StartDate,EndDate,round) {
     }
     streak[hold] = StreakSum
   }
-x
+
   GnsMal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = sum)[,2])
   GnsMalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = sum)[,2])
   GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = mean)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = mean)[,2])/1000
@@ -64,7 +64,7 @@ x
   GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
   GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = mean)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = mean)[,2])/2
   #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-  TeamRatings <- c(65,65,66,65,71,69,63,63,64,66,66,63)
+  TeamRatings <- c(66,65,66,65,71,69,63,63,64,66,66,63)
   x <- as.data.frame.matrix(rbind(TeamRatings,GnsHjorne,GnsOffside,GnsMal,GnsMalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
   names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
@@ -192,11 +192,11 @@ Sandsynligheder1 <- function(beta,theta,x,i,j){
   return(VTU)
 }
 
-m <- CreateMatrixes1(data,"2015-07-17","2016-05-29",0)
-x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe
-
-f <- BTFunktioner1(beta,theta,x,Y,r)
-n <- NR1(x,f)
+mMM <- CreateMatrixes1(datatest1,"2015-07-17","2016-05-29",0)
+xXXXXXx <- mMM$DesignMatrix;Y<-mMM$KontingensTabel;r<-mMM$SamledeKampe
+as.matrix(xXXXXXx)
+f2 <- BTFunktioner1(beta,theta,xXXXXXx,Y,r)
+ntest <- NR1(xXXXXXx,f2)
 beta <- n$beta;theta<-n$theta
 styrker <- n$Styrker
 
