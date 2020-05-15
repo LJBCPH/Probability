@@ -9,6 +9,7 @@ library(BTSoccer)
 library(ggplot2) #plots
 library(psych) #pairs.panel
 library(SSLASSO)
+library(KernSmooth)
 
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
 setwd("C:/Users/lucas/Desktop/Odd")
@@ -211,23 +212,33 @@ UnikHold <- sort(UnikHold)
 runde = 3
 #Danner sandsynligheder tilhÃ¸rende kampene
 m <- CreateMatrixes(data,"2015-07-17","2016-05-29",4,TRUE) #laver design, kontingens og r-tabel
-a = 0;b=0;aa=0;bb=0;
+a = 0;b=0;aa=0;bb=0;beta <- n$beta;theta<-n$theta
 aa <- as.matrix(rbind(c(0,0,0)));bb <- as.matrix(rbind(c(0,0,0)));cc <- as.matrix(rbind(c(0,0,0,"H","U")));
-for (runde in 3:33){
-  m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
-  x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;f <- BTFunktioner(x=x,Y=Y,r=r);
+for (runde in 1:33){
+  #m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+  #x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;f <- BTFunktioner(x=x,Y=Y,r=r);
   data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29") & (data$runde == runde)),]
   data1$HU <- paste(data1$H,data1$U)
-  styrker <- exp(t(x)%*%beta)
+  #styrker <- exp(t(x)%*%beta)
+  piH <- exp(t(x)%*%beta)
   #styrker <- statstyrker
   counter = 1;KumSSH <- matrix(NA, nrow = (factorial(length(UnikHold))/(factorial((length(UnikHold)-2)))), ncol = 5)
+  #for (hold1 in 1:length(UnikHold)) {
+  #  for (hold2 in 1:length(UnikHold)) {
+  #    if (hold1 != hold2){
+  #      KumSSH[counter,] <- cbind(Sandsynligheder(theta,x,styrker,hold1,hold2)[1],Sandsynligheder(theta,x,styrker,hold1,hold2)[2],Sandsynligheder(theta,x,styrker,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
+  #      counter = counter +1
+  #    }
+  #  }
+  #}
+  #UnikHold=names(piH);counter = 1;KumSSH <- matrix(NA, nrow = (factorial(length(UnikHold))/(factorial((length(UnikHold)-2)))), ncol = 5)
   for (hold1 in 1:length(UnikHold)) {
     for (hold2 in 1:length(UnikHold)) {
       if (hold1 != hold2){
-        KumSSH[counter,] <- cbind(Sandsynligheder(theta,x,styrker,hold1,hold2)[1],Sandsynligheder(theta,x,styrker,hold1,hold2)[2],Sandsynligheder(theta,x,styrker,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
-        counter = counter +1
+        KumSSH[counter,] <- cbind(Sandsynligheder1(piH,hold1,hold2)[1],Sandsynligheder1(piH,hold1,hold2)[2],Sandsynligheder1(piH,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
+       counter = counter +1
       }
-    }
+   }
   }
   KumSSH <- as.data.frame.matrix(KumSSH) #kummuleret ssh
   names(KumSSH) <- c("H","U","Uafgjort","H1","H2")
@@ -251,7 +262,7 @@ for (runde in 3:33){
 beta
 #Fixer data til Hosmer og Lemeshows GOF-test
 data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29")),]
-cc <- cc[2:length(cc[,1]),]
+ccS <- cc[2:length(cc[,1]),]
 cc <- as.data.frame(cc)
 ccc <- as.data.frame(cc[,1:3])
 Expect <- cbind(as.numeric(as.character(ccc[,1])),as.numeric(as.character(ccc[,3])),as.numeric(as.character(ccc[,2])))
@@ -281,6 +292,9 @@ bb <- as.data.frame(bb)
 
 #Til residualplots
 #ccStatisk <- cc; #SSH for statisk model
+aa <- as.data.frame(aa);aa <- aa[-1,]
+resDyn <- aa
+ccDyn <- cc
 colnames(ccStatisk) <- c("Hjemmesejr","Udesejr","Uafgjort","HjemmeHold","UdeHold")
 ccStatisk[,1:3] <- sapply(ccStatisk[,1:3],as.character)
 ccStatisk[,1:3] <- sapply(ccStatisk[,1:3],as.numeric)
@@ -302,17 +316,28 @@ ccDyn2 <- ccDyn[,1:3]^2
 ccStatisk2 <- ccStatisk[,1:3]^2
 resDyn2 <- (obs[,1:3]-ccDyn[,1:3])^2;resDyn <- as.data.frame(resDyn)
 resStatisk2 <- (obs[,1:3]-ccStatisk[,1:3])^2;resStatisk <- as.data.frame(resStatisk)
-
+ccDyn
 #plots of res vs fitted
-plot(ccDyn[,1],resDyn[,1],xlab="Fitted",ylab="Raw residuals",main="Hjemmesejr")
-lines(locpoly(ccDyn[,1],resDyn[,1],kernel="normal",bandwidth = 0.05),col="red")
+#estimerede sandsynligheder
+mean(as.numeric(ccDyn[,2]))
+sum(as.numeric(ccDyn[,1]))/198#Dynamisk HS
+sum(as.numeric(ccDyn[,2]))/198#Dynamsik US
+sum(as.numeric(ccDyn[,3]))/198#Dynamisk U
+sum(data1$Hsejr)/198#Sandt HS
+sum(data1$Usejr)/198#Sandt US
+sum(data1$Uafgjort)/198#sandt Uaf
+sum(as.numeric(ccDyn[,1]))/186+sum(as.numeric(ccDyn[,2]))/186+sum(as.numeric(ccDyn[,3]))/186
+#DYN
+plot(ccDyn[,1],resDyn[,1],xlab="Fittede værdier",ylab="Rå Residualer",main="Hjemmesejr")
+lines(locpoly(as.numeric(ccDyn[,1]),resDyn[,1],kernel="normal",bandwidth = 0.06,degree = 0),col="red")
 abline(h=mean(resDyn[,1]),col="black")
-plot(ccDyn[,2],resDyn[,2],xlab="Fitted",ylab="Raw residuals",main="Udesejr")
-lines(locpoly(ccDyn[,2],resDyn[,2],kernel="normal",bandwidth = 0.05),col="red")
+plot(ccDyn[,2],resDyn[,2],xlab="Fittede værdier",ylab="Rå Residualer",main="Udesejr")
+lines(locpoly(as.numeric(ccDyn[,2]),resDyn[,2],kernel="normal",bandwidth = 0.06,degree=0),col="red")
 abline(h=mean(resDyn[,2]),col="black")
-plot(ccDyn[,3],resDyn[,3],xlab="Fitted",ylab="Raw residuals",main="Uafgjort")
-lines(locpoly(ccDyn[,3],resDyn[,3],kernel="normal",bandwidth = 0.02),col="red")
+plot(ccDyn[,3],resDyn[,3],xlab="Fittede værdier",ylab="Rå Residualer",main="Uafgjort")
+lines(locpoly(as.numeric(ccDyn[,3]),resDyn[,3],kernel="normal",bandwidth = 0.02,degree=0),col="red")
 abline(h=mean(resDyn[,3]),col="black")
+#STATISK
 plot(ccStatisk[,1],resStatisk[,1],xlab="Fitted",ylab="Raw residuals",main="Hjemmesejr")
 lines(locpoly(ccStatisk[,1],resStatisk[,1],kernel="normal",bandwidth = 0.05),col="red")
 abline(h=mean(resStatisk[,1]),col="black")
@@ -323,8 +348,12 @@ plot(ccStatisk[,3],resStatisk[,3],xlab="Fitted",ylab="Raw residuals",main="Uafgj
 lines(locpoly(ccStatisk[,3],resStatisk[,3],kernel="normal",bandwidth = 0.02),col="red")
 abline(h=mean(resStatisk[,3]),col="black")
 resDyn[order(resDyn[,1]),]
-dpill(ccDyn[,1],resDyn[,1])
-
+dpill(as.numeric(ccDyn[,1]),resDyn[,1])
+dpill(as.numeric(ccDyn[,2]),resDyn[,2])
+dpill(as.numeric(ccDyn[,3]),resDyn[,3])
+?dpill
+str(ccDyn)
+str(resDyn)
 #GGplot - box
 str(temp)
 ggplot(temp,aes(x = as.factor(Udfald),y=`Estimeret Sandsynlighed`,fill = Udfald)) + geom_boxplot() + xlab("Udfald") +

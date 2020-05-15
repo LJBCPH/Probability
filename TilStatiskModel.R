@@ -206,7 +206,7 @@ n <- NR1(x,f)
 beta <- n$beta;theta<-n$theta
 names(beta)=rownames(x)
 n$sd
-betas #<- beta
+betas <- beta
 
 styrker <- n$Styrker
 styrker/styrker[7]
@@ -274,7 +274,7 @@ for(j in 1:length(UnikHold)){
 for (i in 1:(length(UnikHold)-1)){
   point[j]=point[j]+3*(3*as.numeric(KumSSH[which(KumSSH[,4]==UnikHold[j]),][i,1])+as.numeric(KumSSH[which(KumSSH[,4]==UnikHold[j]),][i,3])*1)
  }
-} 
+}
 names(point)=names(x)
 sum(point)
 beta
