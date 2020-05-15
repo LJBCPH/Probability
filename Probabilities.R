@@ -248,7 +248,7 @@ for (runde in 3:33){
   CC <- as.matrix(((cbind(ssh$H,ssh$U,ssh$Uafgjort,data1$H,data1$U)))) #Yhat med hold
   cc <- rbind(cc,CC)
 }
-
+beta
 #Fixer data til Hosmer og Lemeshows GOF-test
 data1 <- data[which((data$dato>="2015-07-17") & (data$dato<="2016-05-29")),]
 cc <- cc[2:length(cc[,1]),]
@@ -265,11 +265,12 @@ obs <- as.data.frame(obs)
 logitgof(relevel(factor(obs$V1),'3'),Expect,10)
 
 #Estimererede Pointtildeling
-cc <- as.data.frame(cc)
+cc <- as.data.frame(cc);cc <- cc[-1,]
 sump <- aggregate(as.numeric(as.character(cc[,1])),by = list(UnikHold=cc[,4]),FUN = sum)[,2]*3+aggregate(as.numeric(as.character(cc[,2])),by = list(UnikHold=cc[,5]),FUN = sum)[,2]*3+
 aggregate(as.numeric(as.character(cc[,3])),by = list(UnikHold=cc[,4]),FUN = sum)[,2]+aggregate(as.numeric(as.character(cc[,3])),by = list(UnikHold=cc[,5]),FUN = sum)[,2]
-names(sump) <- names(x)
-
+names(sump) <- names(Y)
+round(sump*(1+2/33),3)
+sum(sump*(1+2/33))
 a <- a[2:length(a)]
 b <- b[2:length(b)]
 aa <- aa[2:length(aa[,1]),1:3]
@@ -414,4 +415,18 @@ beta <- n$beta;theta <- n$theta;names(beta)=rownames(x)
 sfb<-n$sd;names(sfb)=rownames(x)
 m <- CreateMatrixes(data,"2015-07-17","2016-05-29",30)
 x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe
-n$styrkgemt/31
+Xgns <- n$Xgns/31;colnames(Xgns)=colnames(Y)
+XgnsUHB <- Xgns;betaUHB = beta#fjerne hjemmebane
+XgnsH <- XgnsUHB-XgnsUHB[,7]
+pignsH <- exp(t(XgnsH)%*%betaUHB); rownames(pigns)=colnames(Y)#GnsStyrker
+###################Standardfejl:
+varpignsH <- c(rep(0,12));varbeta <- n$KV[-13,-13];varbetaH <-varbeta
+for (i in 1:12){
+  varpignsH[i]= exp(t(XgnsH[,i])%*%betaUHB)%*%(t(XgnsH[,i])%*%varbetaH%*%XgnsH[,i])%*%exp(t(XgnsH[,i])%*%betaUHB)
+}
+sfpignsH <- sqrt(varpignsH);
+names(varpignsH)=colnames(Y);names(sfpignsH)=colnames(Y);rownames(pignsH)=colnames(Y)
+round(varpignsH,3)#varians
+round(t(pignsH),3)#styrker
+round(sfpignsH,3)#standardfejl
+

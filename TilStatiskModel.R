@@ -189,7 +189,7 @@ NR1 <- function(x,f,Beta) {
   return(Values)
 }
 
-Sandsynligheder1 <- function(beta,theta,x,i,j){
+Sandsynligheder1 <- function(styrker,i,j){
   VTU=0;
   VTU = c((styrker[i])/(styrker[i]+theta*styrker[j]),
           ((styrker[j])/(styrker[i]*theta+styrker[j])),
@@ -256,3 +256,27 @@ names(varpiH)=names(x);names(sfpiH)=names(x);names(piH)=names(x)
 round(piH,3)#styrker
 round(varpiH,3)#varians
 round(sfpiH,3)#standardfejl
+###point
+
+UnikHold=names(piH);counter = 1;KumSSH <- matrix(NA, nrow = (factorial(length(UnikHold))/(factorial((length(UnikHold)-2)))), ncol = 5)
+for (hold1 in 1:length(UnikHold)) {
+  for (hold2 in 1:length(UnikHold)) {
+    if (hold1 != hold2){
+      KumSSH[counter,] <- cbind(Sandsynligheder1(piH,hold1,hold2)[1],Sandsynligheder1(piH,hold1,hold2)[2],Sandsynligheder1(piH,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
+      counter = counter +1
+    }
+  }
+}
+KumSSH[which(KumSSH[,4]=="AaB"),][1]*3+KumSSH[which(KumSSH[,4]=="AaB"),][3]*1
+Point1 <- 3*(KumSSH[which(KumSSH[,4]=="AaB"),][1]*3+KumSSH[which(KumSSH[,4]=="AaB"),][3]*1)
+point<-c(rep(0,12));
+for(j in 1:length(UnikHold)){
+for (i in 1:(length(UnikHold)-1)){
+  point[j]=point[j]+3*(3*as.numeric(KumSSH[which(KumSSH[,4]==UnikHold[j]),][i,1])+as.numeric(KumSSH[which(KumSSH[,4]==UnikHold[j]),][i,3])*1)
+ }
+} 
+names(point)=names(x)
+sum(point)
+beta
+UnikHold[1]
+as.numeric(KumSSH[which(KumSSH[,4]==UnikHold[1]),][,1])

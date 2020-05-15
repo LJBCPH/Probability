@@ -100,9 +100,9 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   x <- as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
 #  x <- x[-10,]
   #x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
-  #x <- t(standard(t(x)))
-#  x <- as.data.frame(t(scale(t(x))))
- # x <- as.data.frame(x)
+  x <- t(standard(t(x)))
+  #x <- as.data.frame(t(scale(t(x))))
+  #x <- as.data.frame(x)
   names(x) <- names(Y)
   #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
   #Danner Antal-kampe-vektoren (r)
@@ -214,7 +214,8 @@ BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
 }
 
 NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,MaxIte = 300,LambLimit = 0.0001,c = 0.01) {
-  if(missing(Sbeta)) {
+ styrkgemt <- c(rep(0,12));Xgns=0;
+   if(missing(Sbeta)) {
     itebeta <- c(rep(0,dim(x)[1]))
     cat("\nbta lange: ",length(beta),"\n")
   } else {
@@ -304,6 +305,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,Max
       counter = counter +1;
       cat("\nVal",abs(val),"\ncounter",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
     } else {
+      Xgns=0
       for (runde in RoundList){
         m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
         x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
@@ -314,6 +316,8 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,Max
             #cat("\nFjernet elementt nr. ", LassoRemoved[Remove+1],"\n","x dim: ",dim(x[1]),"\nbeta length: ",length(beta),"\n")
           }
         }
+        Xgns = Xgns + x
+        styrkgemt = styrkgemt+exp(t(x)%*%beta)
         f <- BTFunktioner(x=x,Y=Y,r=r)
         if (runde == 3) {
           #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
@@ -403,7 +407,7 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,Max
   KV <- inv(inf)
   U <- sqrt(diag(KV))
   names(beta) <- rownames(x)
-  Values = list("beta" = beta, "theta" = theta,"styrker" = styrker,"sd" = U)
+  Values = list("beta" = beta, "theta" = theta,"KV"=KV,"styrker" = styrker,"styrkgemt"=styrkgemt,"Xgns"=Xgns,"sd" = U)
   return(Values)
 }
 Sandsynligheder <- function(theta,x,styrker,i,j){
