@@ -1,6 +1,13 @@
-require(matlib) #Til vektor/matrix regning
-require(blockmatrix) #matrixopsætning
-require(tidyr) #Til data transformation
+library(matlib) #Til vektor/matrix regning
+library(MASS) # Til invers af numerisk problematiske matricer
+library(blockmatrix) #matrixopsÃ¦tning
+library(tidyr) #Til data transformation
+library(xtable) #Til Latex table
+library(BTSoccer)
+library(ggplot2) #plots
+library(psych) #pairs.panel
+library(SSLASSO)
+library(KernSmooth)
 rm(list=ls())
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
 data <- read.table("Kampe_r1.csv",header=T,sep=",")
@@ -197,7 +204,6 @@ Sandsynligheder1 <- function(styrker,i,j){
   )
   return(VTU)
 }
-
 m <- CreateMatrixes1(data,"2015-07-17","2016-05-29",0)
 x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe
 data
@@ -207,14 +213,10 @@ beta <- n$beta;theta<-n$theta
 names(beta)=rownames(x)
 n$sd
 betas <- beta
-
-styrker <- n$Styrker
-styrker/styrker[7]
-statstyrker <- n$Styrker/min(n$Styrker)
 b0 <- c(rep(0,length(n$beta)))
-lrh0 <- f$loglike(b0,1.637884,x);lrh0
-lrmle <- -190.6743
--2*(lrh0-lrmle)
+lrh0 <- f$loglike(b0,1.666556,x);lrh0
+lrmle <- -190.644
+round(-2*(lrh0-lrmle),3)
 
 round(n$beta,6)
 round(n$theta,6)
