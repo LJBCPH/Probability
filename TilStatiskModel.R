@@ -8,6 +8,7 @@ library(ggplot2) #plots
 library(psych) #pairs.panel
 library(SSLASSO)
 library(KernSmooth)
+library(directlabels)
 rm(list=ls())
 setwd("C:/Users/Victo/Desktop/bachelor/kode")
 data <- read.table("Kampe_r1.csv",header=T,sep=",")
@@ -168,28 +169,65 @@ BTFunktioner1 <- function(beta,theta,x,Y,r) {
   return(Funktions)
 }
 
-NR1 <- function(x,f,Beta) {
+NR1 <- function(x,f,Beta,SBeta,lambda=0,c=10^(-10),lamblimit=10^(-5)) {
+  if(missing(SBeta)){
   ite = as.matrix(c(rep(0.1,dim(x)[1]),1.1));counter=0;val=1;
-  while(abs(val)>0.0000001){
+  }else{
+    ite = as.matrix(c(SBeta,1.1));counter=0;val=1;
+    x <- x[which(rownames(x)%in%names(SBeta)),]
+  }
+  while(abs(val)>10^(-8)){
     if(missing(Beta)){
     beta = c(ite[1:(dim(x)[1])]);
     } else {
     beta = Beta
     }
+
     theta=ite[dim(x)[1]+1];
-    a12 = as.matrix(f$dlbeta(beta,theta,x));
+    a12 = as.matrix(f$dlbeta(beta,theta,x)-lambda*(beta/sqrt(beta^2+c^2)))
     grad = rbind(a12,f$dltheta(beta,theta,x));
-    A = f$dl2xbeta(beta,theta,x);B = as.matrix(f$dlbetatheta(beta,theta,x));C = t(as.matrix(f$dlbetatheta(beta,theta,x)));D = f$dl2xtheta(beta,theta,x);
+    A = f$dl2xbeta(beta,theta,x)-lambda*(c^2)/((beta^2+c^2)^(3/2));B = as.matrix(f$dlbetatheta(beta,theta,x));C = t(as.matrix(f$dlbetatheta(beta,theta,x)));D = f$dl2xtheta(beta,theta,x);
     inf = cbind(A,B);inf = rbind(inf,c(C,D));inf=-inf;
     temp = ite;
-    ite = ite + Inverse(inf)%*%grad*(1/2);
+    i=0;foundstep=FALSE;itetemp=0;thetatest=0;betatest=c(rep(0,length(beta)));
+    while(i < 150&foundstep==FALSE){
+      i=i+1
+      w=1/i;
+      itetemp=ite + Inverse(inf)%*%grad*w
+      betatest = c(itetemp[1:(dim(x)[1])])
+      thetatest =itetemp[dim(x)[1]+1]
+      if(f$loglike(betatest,thetatest,x)-lambda*sum(sqrt(betatest^2+c^2)) > f$loglike(beta,theta,x)-lambda*sum(sqrt(beta^2+c^2)))
+      {
+        foundstep = TRUE
+      }
+    }
+    if(foundstep==FALSE){
+      cat("\n fandt ingen skridtlænge: breakAAAAA")
+      cat("\n logl :",f$loglike(beta,theta,x)-lambda*sum(sqrt(beta^2+c^2)))
+      styrker <- exp(t(x)%*%beta)
+      rownames(styrker)=na.omit(names(x));names(beta)=na.omit(rownames(x))
+      KV <- inv(inf)
+      U <- sqrt(diag(KV))
+      Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U,"KV"=KV)
+      return(Values)
+      break
+      }
+    ite = ite + Inverse(inf)%*%grad*w;
     val = sum(temp-ite);
+    for(i in length(beta):1){
+      if((abs(ite[i])<lamblimit || sign(ite[i])!=sign(temp[i]))&&counter>2){
+        ite <- ite[-i]
+        x <- x[-i,]
+        beta <- beta[-i]
+        cat("\nFjernet Koefficient nr: ",i)
+      }
+    }
     cat(f$loglike(beta,theta,x),"   ",counter,"\n",beta,"\n",theta,"\n")
     counter = counter +1;
   }
-  cat("logl :",f$loglike(beta,theta,x))
+  cat("logl :",f$loglike(beta,theta,x)-lambda*sum(sqrt(beta^2+c^2)))
   styrker <- exp(t(x)%*%beta)
-  rownames(styrker)=na.omit(names(x))
+  rownames(styrker)=na.omit(names(x));names(beta)=na.omit(rownames(x))
   KV <- inv(inf)
   U <- sqrt(diag(KV))
   Values = list("beta" = beta, "theta" = theta,"Styrker" = styrker,"sd" = U,"KV"=KV)
@@ -208,8 +246,9 @@ m <- CreateMatrixes1(data,"2015-07-17","2016-05-29",0)
 x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe
 data
 f <- BTFunktioner1(beta,theta,x,Y,r)
-n <- NR1(x,f)
-beta <- n$beta;theta<-n$theta
+n <- NR1(SBeta=beta,x,f,lambda=100);beta <- n$beta;theta<-n$theta;beta
+beta0 <- beta
+sum(abs(beta))
 names(beta)=rownames(x)
 n$sd
 betas <- beta
@@ -282,3 +321,197 @@ sum(point)
 beta
 UnikHold[1]
 as.numeric(KumSSH[which(KumSSH[,4]==UnikHold[1]),][,1])
+#Krydsvalidering
+dataa <- data[which((data$dato>=StartDate) & (data$dato <= EndDate)),]
+data3 <- dataa[which(dataa$runde>3),]
+StartDate <- "2015-07-17";EndDate <- "2016-05-29"
+length(data3[,1])
+dim(as.data.frame(split(data3,sample(1:6,33,replace=T))))
+
+ttt <- sample(unique(data3$runde),30,replace=F)
+q1 <- data3[which(data3$runde%in%ttt[1:5]),];q2 <- data3[which(data3$runde%in%ttt[6:10]),]
+q3 <- data3[which(data3$runde%in%ttt[11:15]),];q4 <- data3[which(data3$runde%in%ttt[16:20]),]
+q5 <- data3[which(data3$runde%in%ttt[21:25]),];q6 <- data3[which(data3$runde%in%ttt[26:30]),]
+Q <- list(q1,q2,q3,q4,q5,q6)
+################################################
+5/0.01
+lambdatest=0;
+for(i in 1:500){
+  lambdatest[i]=exp(i*0.0001)
+}
+
+lambdatest=lambdatest-1
+KrydsVal <- cbind(c(4,8),c(9,13),c(14,18),c(19,23),c(24,28),c(29,33))
+a = 0;b=0;aa=0;bb=0;BetaAvgerage=0;kryds=0;Kryds=0;
+NumbBeta=0;beta=beta0;AA <- as.matrix(rbind(c(0,0,0)));BB <- as.matrix(rbind(c(0,0,0)));NumbBeta = 0;BetaAvg <- vector("list",length(lambdatest))
+for(lambda in lambdatest){
+  cat("\nTESTER NU LAMBDA = ",lambda)
+  cat("\nTESTER NU LAMBDA = ",lambda)
+  cat("\nTESTER NU LAMBDA = ",lambda,"\n")
+  NumbBeta=NumbBeta+1
+  BetaAvgerage=0
+    for(j in 1:6){
+      a = 0;b=0;
+      m <- CreateMatrixes1(data3[which((data3$runde<KrydsVal[1,j])|(data3$runde>KrydsVal[2,j])),],"2015-07-17","2016-05-29",0)
+      x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe
+      f <- BTFunktioner1(beta,theta,x,Y,r)
+      n <- NR1(SBeta=beta,x,f,lambda=lambda);beta <- n$beta;theta<-n$theta;beta
+      data2=data3[which((data3$runde>KrydsVal[1,j])&(data3$runde<KrydsVal[2,j])),]
+      x <- x[which(rownames(x)%in%names(beta)),]
+      #beta0 <- beta
+      sum(r)
+for (i in 1:12){
+  pi[i]=exp(x[,i]%*%beta)
+}
+UnikHold=names(x);counter = 1;KumSSH <- matrix(NA, nrow = (factorial(length(UnikHold))/(factorial((length(UnikHold)-2)))), ncol = 5)
+for (hold1 in 1:length(UnikHold)) {
+  for (hold2 in 1:length(UnikHold)) {
+    if (hold1 != hold2){
+      KumSSH[counter,] <- cbind(Sandsynligheder1(pi,hold1,hold2)[1],Sandsynligheder1(pi,hold1,hold2)[2],Sandsynligheder1(pi,hold1,hold2)[3],UnikHold[hold1],UnikHold[hold2])
+      counter = counter +1
+    }
+  }
+}
+for(k in KrydsVal[1,j]:KrydsVal[2,j]){
+  data2=data3[which((data3$runde==k)),]
+
+  KumSSH <- as.data.frame.matrix(KumSSH) #kummuleret ssh
+  names(KumSSH) <- c("H","U","Uafgjort","H1","H2")
+  KumSSH$H1H2 <- paste(KumSSH$H1,KumSSH$H2)
+  data2$HU <- paste(data2$H,data2$U)
+  ssh <- KumSSH[KumSSH$H1H2 %in% data2$HU,]
+  ssh$H <- as.numeric(as.character(ssh$H));ssh$U <- as.numeric(as.character(ssh$U));ssh$Uafgjort <- as.numeric(as.character(ssh$Uafgjort))
+  ssh <- ssh[order(ssh$H1H2),]
+  data2 <- data2[order(data2$HU),]
+  as.data.frame(lapply((cbind(data2$Hsejr,data2$Usejr,data2$Uafgjort)-cbind(ssh$H,ssh$U,ssh$Uafgjort))^2, function(y) sum(y)))
+  A <- c(rowSums(as.matrix((cbind(data2$Hsejr,data2$Usejr,data2$Uafgjort)-cbind(ssh$H,ssh$U,ssh$Uafgjort))^2))) #(Y-Yhat)^2
+  a <- c(append(a,A,after= length(a)))
+  B <- c(rowSums((cbind(data2$Hsejr*log(ssh$H),data2$Usejr*log(ssh$U),data2$Uafgjort*log(ssh$Uafgjort))))) #log(Yhat)
+  b <- c(append(b,B,after = length(b)))
+  #      length(beta0) <- length(BetaAvgerage)
+}
+BetaAvgerage <- BetaAvgerage+beta
+AA <- cbind(c(append(AA[,1],a,after=length(AA[,1]))),c(append(AA[,2],rep(lambda,length(a)),after=length(AA[,1]))))
+BB <- cbind(c(append(BB[,1],b,after=length(BB[,1]))),c(append(BB[,2],rep(lambda,length(b)),after=length(BB[,1]))))
+#BetaAvg <- cbind(c(append(BetaAvg[,1],BetaAvg/6,after=length(BetaAvg[,1]))),c(append(BetaAvg[,2],rep(Lambda,length(beta)),after=length(BetaAvg[,1]))))
+BetaAvg[[NumbBeta]] <- cbind(c(BetaAvgerage/6),c(rep(lambda,length(BetaAvgerage))))
+cat("\n\n\n",lambda,"\n\n\n")
+}
+
+}
+#########################################################################################
+m1 <- rbind(BetaAvg[[1]],BetaAvg[[2]])
+for(i in 3:609){
+  m1 <- rbind(m1,BetaAvg[[i]])
+}
+write.csv(m1,file="betaAvg.csv")
+m1
+AMSP <- AA
+BLL <- BB
+AMSP <- AMSP[which(AMSP[,1]!=0),]
+3600/20
+for ( i in 1:length(unique(AMSP[,2]))){
+  cat("\n",length(AMSP[,2][which(AMSP[,2]==unique(AMSP[,2])[i])]))
+}
+write.csv()
+AMSP1 <- AMSP[which(AMSP[,2]!=max(AMSP[,2])),]
+BLL1 <- BLL[which(BLL[,2]!=max(BLL[,2])),]
+lfejl <- cbind(BLL1,rep(1:180,length(unique(BLL1[,2]))));lfejl <- as.data.frame(lfejl)
+mspefejl <- cbind(AMSP1,rep(1:180,length(unique(AMSP1[,2]))));mspefejl <- as.data.frame(mspefejl)
+colnames(lfejl) <- c("Fejl","Lambda","nr");colnames(mspefejl) <- colnames(lfejl)
+length(lfejl$Lambda)/180
+length(lambdatest)
+lambdatest[609]
+lambdatestt <- lambdatest[which(lambdatest<20.01003)]
+lfejlgns=0;counter=0;mspefejlgns=0;
+for (i in lambdatestt){
+  counter=counter+1
+lfejlgns[counter] <- mean(lfejl[which(lfejl$Lambda==i),1])
+mspefejlgns[counter] <- mean(mspefejl[which(mspefejl$Lambda==i),1])
+}
+lfejlgns <- cbind(lfejlgns,lambdatestt)
+mspefejlgns <- cbind(mspefejlgns,lambdatestt)
+str(lfejl)
+plot(-lfejlgns)
+min(-lfejlgns[,1])
+
+lfejlgns[which(-lfejlgns==min(-lfejlgns[,1])),]
+mspefejlgns[which(mspefejlgns==min(-mspefejlgns[,1])),]
+
+lfejlgns$lambda[which(-lfejlgns[,1]==1.033374)]
+ggplot() + ylab("MSPE") + xlab("??")+
+  #theme_bw() +
+  #theme(panel.grid=element_blank()) +
+  geom_line(size=0.22,alpha=0.35,data=mspefejl[which(mspefejl$Lambda<= 0.02),], aes(x=Lambda, y=Fejl, group=as.factor(nr),color=as.factor(nr))) + #geom_line(data = meanfejl,aes(x = Lambda,y = Fejl),size=1) +
+  theme(legend.position = "none")+
+  geom_line(data = as.data.frame(mspefejlgns)[which(mspefejl$Lambda<= 0.02),], aes(x=lambdatest, y=mspefejlgns))
+#scale_colour_binned(palette="Greens")+
+?ggplot
+min(lfejl$Lambda)
+bs=0;
+for(i in 1:500){
+bs[i] <- sum(abs(BetaAvg[[i]][,1]))
+  }
+plot(bs)
+  beta0
+  BetaAvg <- na.omit(BetaAvg)
+  BetaAvg <- as.numeric(BetaAvg)
+  write.csv(BetaAvg,file="betaAvg.csv")
+  names(BetaAvg)=
+  str(BetaAvg)
+  write.csv(cbind(lfejl,mspefejl),file="Statisk_Krydsval20.csv")
+#SJOVT PLOT BETAE KOEFFICIENTER MOD LAMBDA
+m <- CreateMatrixes1(data,"2015-07-17","2016-05-29",0)
+x <- m$DesignMatrix;Y<-m$KontingensTabel;r<-m$SamledeKampe;koef=cbind(c(0),c(0));tbeta = beta0;
+for(i in 1:800){
+  f <- BTFunktioner1(beta,theta,x,Y,r)
+  n <- NR1(SBeta=tbeta,x,f,lambda=(lambdatest[i]-1));beta <- n$beta;theta<-n$theta;beta
+  tbeta <- beta
+  lengthbeta <- length(beta)
+  length(beta)=length(beta0)
+  names(beta) <- c(names(beta[1:(lengthbeta)]),names(beta0[which(!(names(beta0)%in%names(beta)))]))
+  koef<-cbind(c(append(koef[,1],beta,after=length(koef[,1]))),c(append(koef[,2],rep(lambdatest[i]-1,10),after=length(koef[,1]))))
+}
+koeff <- koef
+koef <- koeff
+koefBB <- koef
+koef <- koeff
+koef[is.na(koef)]=0
+koef <- koef[-1,]
+colnames(koef)=c("val","lambda","Variable")
+koef <- cbind(koef,c(rownames(koef)))
+koef <- as.data.frame(koef)
+koef$lambda <- as.numeric(koef$lambda)
+koef$val <- as.numeric(koef$val)
+
+str(koef)
+?replace
+koef$V3 <-replace(koef$V3,koef$V3=="GnsBoldBes","BB")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsFrispark","Fris")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsHjorne","Hjrne")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsMal","Mal")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsMalInd","MalI")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsOffside","Offs")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsSkud","Skud")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsSkudIndenfor","SkudI")
+koef$V3 <-replace(koef$V3,koef$V3=="GnsTilskuer","Tils")
+koef$V3 <-replace(koef$V3,koef$V3=="TeamRatings","Fifa")
+#write.csv(koef,file="SKL1.csv")
+
+
+
+
+
+?scale_x_continuous
+ggplot(data = koef[which(koef$lambda<=55),],aes(x=log(lambda),y=val,col=Variable)) + ylab("Koefficienter") + xlab("log??")+
+
+    #theme_bw() +
+  #theme(panel.grid=element_blank()) +
+  #theme(legend.position = "none")+
+  scale_color_manual(values = c("coral4","dodgerblue4","antiquewhite4","chartreuse1","slateblue",
+                                "burlywood","magenta1","blue1","orangered1","yellowgreen"))+
+scale_x_continuous( sec.axis =~ exp(.))+
+geom_line()+
+geom_hline(aes(yintercept=0),colour = 'white',size=0.1)+
+geom_dl(aes(label=Variable),method=list(dl.combine("first.points"),cex=0.8))
+#scale_colour_binned(palette="Greens")+
