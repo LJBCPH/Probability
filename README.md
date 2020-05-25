@@ -1,2 +1,2 @@
-This is a project concerning football probabilities with the use of Bradley-Terry with three outcomes, the model is written in R. The goal is to predict probabilities of the outcome for a football match.
+This is a work in progress concerning the Rao & Kupper model to estimate ranks of soccer teams and point estimate probabilities for outcomes of matches. The model is fitted with the Newton-Raphson algorithm, and is enhanced with lasso.
 
