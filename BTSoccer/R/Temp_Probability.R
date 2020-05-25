@@ -1,42 +1,31 @@
 require(matlib) #Til vektor/matrix regning
-require(blockmatrix) #matrixopsætning
+require(blockmatrix) #matrixopsaetning
 require(tidyr) #Til data transformation
 require(MASS)
-CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
-  #fikser datatypes
-  data$H <- as.character(data$H)
-  data$U <- as.character(data$U)
-  data$dato <- as.Date(data$dato, format = "%m/%d/%Y")
-  #Henter 1.5 sæson ud:
-  #StartDate = "2015-07-17";EndDate = "2016-05-29";round = 20;
-  data2 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde == round)),]
-  data1 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde < round)),]
-  #data1 <- data1[(data1$H %in% data2$H) | (data1$U %in% data2$U),];
-  #data1 <- data1[data1$U %in% data2$U,];
-  #Finder holdene der er i Superligaen i indeværende sæson
+CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE,Lambda,Variabler,alpha,model) {
+  #Opdeler data i at inkludere den valgte runde, samt alle runder foer runden.
+  if(model == "Dyn"){
+    data2 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde == round)),]
+    data1 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate) & (data$runde < round) & (data$runde>=(round-alpha))),]
+  } else {
+    data2 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate)),]
+    data1 <- data[which((data$dato>=StartDate) & (data$dato <= EndDate)),]
+  }
+  #Finder holdene der er i Superligaen i indevaerende saeson
   dataUNan <- na.omit(data1)
-  #sætter Y-kontingenstabellen op:
+  #saetter Y-kontingenstabellen op:
   #Samler strengen af hjemme mod ude
   data2$HU <- paste(data2$H,data2$U)
   UnikSammenligner <- unique(data2$HU)
   #Udregner antal hjemmesejre og udesejre i kombinationerne
   hjemmesejre <- aggregate(data2$Hsejr, by = list(HU=data2$HU),FUN=sum);hjemmesejre <- hjemmesejre[order(hjemmesejre$HU),]
   udesejre <- aggregate(data2$Usejr, by = list(HU=data2$HU),FUN=sum);udesejre <- udesejre[order(udesejre$HU),]
-  #Data fix
+  #Data fix til at faa ude og hjemme i rigtig raekkefoelge
   udesejre <- separate(data=udesejre,col=HU,into=c("H1","H2"),sep=" ")
   hjemmesejre <- separate(data=hjemmesejre,col=HU,into=c("H1","H2"),sep=" ")
   #bytter kolonner
   udesejre <- udesejre[(c("H2","H1","x"))];names(udesejre) <- c("H1","H2","x")
-  #udesejre$HU <- paste(udesejre$H2,udesejre$H1);udesejre <- udesejre[,4:3];#udesejre <- udesejre[order(udesejre$HU),]
-  #HUsejre <- c(hjemmesejre$x+udesejre$x)
   samlet <- rbind.data.frame(hjemmesejre,udesejre)
-  #colnames(samlet)[1] <- "Hold"
-  #UnikSammenligner <- separate(data = as.data.frame(UnikSammenligner),col = UnikSammenligner,into = c("H1","H2"),sep = " ")
-  #UnikHold
-  #samlet <- separate(data=samlet,col=Hold,into=c("H1","H2"),sep=" ")
-  #tsamlet <- cbind.data.frame(samlet$H2,samlet$H1,rep(0,length(samlet[,1])))
-  #names(tsamlet) <- c("H1","H2","HUsejre")
-  #samlet <- rbind(samlet,tsamlet)
   Y <- xtabs(samlet$x~(H1+H2),samlet)
   Y <- as.data.frame.matrix(Y)
   #Danner designmatricen
@@ -63,16 +52,6 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
     }
     streak[hold] = StreakSum
   }
-#  Random1 <- c(rep(rnorm(1,0),11),2)
-#  Random2 <- c(rep(rnorm(1,0),11),2)
-#  Random3 <- c(rep(rnorm(1,0),11),2)
-#  Random4 <- c(rep(rnorm(1,0),11),2)
-#  Random5 <- c(rep(rnorm(1,0),11),2)
-#  Random6 <- c(rep(rnorm(1,0),11),2)
-#  Random7 <- c(rep(rnorm(1,0),11),2)
-#  Random8 <- c(rep(rnorm(1,0),11),2)
-#  Random9 <- c(rep(rnorm(1,0),11),2)
-#  Random10 <- c(rep(rnorm(1,0),11),2)
   Mal <- c(aggregate(data1$HM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$UM, by = list(U = data1$U),FUN = sum)[,2])
   MalInd <- c(aggregate(data1$UM, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$HM, by = list(U = data1$U),FUN = sum)[,2])
   GnsTilskuer <- c(aggregate(data1$Tilskuere, by = list(H = data1$H),FUN = sum)[,2]+aggregate(data1$Tilskuere, by = list(U = data1$U),FUN = sum)[,2])/(round-1)
@@ -82,10 +61,8 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
   GnsFrispark <- c(aggregate(dataUNan$frispark_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$frispark_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
   GnsHjorne <- c(aggregate(dataUNan$hjorne_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$hjorne_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
   GnsOffside <- c(aggregate(dataUNan$offside_h, by = list(H = dataUNan$H),FUN = sum)[,2]+aggregate(dataUNan$offside_u, by = list(U = dataUNan$U),FUN = sum)[,2])/(round-1)
-  #TeamRatings <- c(67,63,66,67,66,72,69,66,64,63,66,64,65,62,64,64)
-  ##TeamRatings <- c(66,65,67,65,71,69,64,64,64,66,65,63)
-  #TeamRatings <- c(65,66,65,71,69,63,63,64,66,66,63,65)
-  TeamRatings <- c(65,67,65,71,69,64,64,64,66,65,63,66)
+  TeamRatings <- c(66,65,67,65,71,69,64,64,64,66,65,63) #FIFA RATINGS TIL SaeSON 2015-2016
+  #TeamRatings <- c(66,67,64,69,66,61,63,62,63,65,61,57) #FIFA RATINGS TIL SaeSON 2014-2015
   TeamRatings <- cbind(c(UnikHold),TeamRatings)
   TeamRatings <- TeamRatings[TeamRatings[,1] %in% UnikHold,];
   FifaRating <- as.numeric(TeamRatings[,2])
@@ -97,32 +74,33 @@ CreateMatrixes <- function(data,StartDate,EndDate,round,TR = FALSE) {
       }
     }
   }
-  x <- as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark))
-#  x <- x[-10,]
-  #x <- as.data.frame.matrix(prop.table(as.matrix(x),1))
+  if(model == "Dyn"){
+  x <- t(standard(t(as.data.frame.matrix(rbind(HjemmeBane,streak,FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark)))))
+  #Fjerner de variabler fra designmatricen der er blevet fjernet v. lasso
+  } else {
+    x <- t(standard(t(as.data.frame.matrix(rbind(FifaRating,GnsHjorne,GnsOffside,Mal,MalInd,GnsTilskuer,GnsBoldBes,GnsSkud,GnsSkudIndenfor,GnsFrispark)))))
+  }
+  if(missing(Variabler)){}
+  else{
+  x <- x[which(rownames(x) %in% names(Variabler)),]
+  }
+  #standardiserer designmatricen
   x <- t(standard(t(x)))
-  #x <- as.data.frame(t(scale(t(x))))
-  #x <- as.data.frame(x)
-  names(x) <- names(Y)
-  #x <- as.matrix(rbind(GnsMal,GnsBoldBes,GnsSkud))
-  #Danner Antal-kampe-vektoren (r)
-  #rsamlet <- cbind.data.frame(data2$U,data2$H,rep(1,length(data2[,1])),rep(0,length(data2[,1])),rep(0,length(data2[,1])))
-  #names(rsamlet) <- c("data2$H","data2$U","data2$Hsejr","data2$Usejr","data2$Uafgjort")
-  #rsamlet2 <- rbind(cbind.data.frame(data2$H,data2$U,data2$Hsejr,data2$Usejr,data2$Uafgjort),rsamlet)
-  #names(rsamlet2) <- c("H","U","Hsejr","Usejr","Uafgjort")
+  colnames(x) <- names(Y)
+  #Danner r/R-matricen
   rsamlet <- cbind.data.frame(samlet$H1,samlet$H2,rep(1,length(samlet$H1)))
   rsamlet2 <- rsamlet
   names(rsamlet2) <- c("H","U","Total")
   levels(rsamlet2$U) <- sort(levels(rsamlet2$U))
   levels(rsamlet2$H) <- sort(levels(rsamlet2$U))
-  #r <- xtabs((rsamlet2$Hsejr+rsamlet2$Usejr+rsamlet2$Uafgjort)~(H+U),rsamlet2)
   r <- xtabs((rsamlet2$Total)~(H+U),rsamlet2)
   r <- as.data.frame.matrix(r)
-  #r <- r+t(r)
+  #Returnerer matricer
   Matrixes <- list("DesignMatrix" = x,"KontingensTabel" = Y,"SamledeKampe" = r)
   return(Matrixes)
 }
 
+#Rao-Kupper funktioner
 BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
   logl <- function(beta,theta,lambda=0,x){
     sum=0;
@@ -213,114 +191,64 @@ BTFunktioner <- function(beta,theta,lambda=0,x,Y,r) {
   return(Funktions)
 }
 
-NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,MaxIte = 300,LambLimit = 0.0001,c = 0.01) {
- styrkgemt <- c(rep(0,12));Xgns=0;
+#Newton-Raphson
+NR <- function(StartDate,EndDate,x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,MaxIte = 300,LambLimit = 0.0001,c = 0.01,data,alpha,model) {
+ #Tjekker om der er valgt en initialiseringsbeta
+  styrkgemt <- c(rep(0,12));Xgns=0;
    if(missing(Sbeta)) {
     itebeta <- c(rep(0,dim(x)[1]))
-    cat("\nbta lange: ",length(beta),"\n")
   } else {
     itebeta <- Sbeta
   }
-  if(missing(Stheta)) {
+  #Tjekker om der er valgt en initialiseringstheta
+    if(missing(Stheta)) {
     itetheta <- 1.1
   } else {
     itetheta <- Stheta
   }
   LassoRemoved <- 0
   ite = as.matrix(c(itebeta,itetheta))
-  #ite = as.matrix(c(rep(0,dim(x)[1]),1.55));
-  counter=0;val=1;StepHalv = 1/2;
-  while(abs(val)>eps){
-#    cat("\n\n Missing(Beta) = ",missing(Beta),"\n\n")
-     if(missing(Beta)){
+  iteration=0;epsilon=1;StepHalv = 1/2;
+  while(abs(epsilon)>eps){
+#Tjekker om der er valgt fast beta
+    if(missing(Beta)){
       beta = c(ite[-length(ite)]);
-      cat("\nbta lange: ",length(beta),"\n")
     } else {
       beta = Beta
-      beta = c(ite[-length(ite)]);
-#      cat("\nbta laasdsaddassadnge: ",length(beta),"\nbeta",beta)
           }
+#Tjekker om der er valgt fast theta
     if(missing(Theta)){
       theta=ite[dim(x)[1]+1];
     } else {
       theta = Theta
     }
-    #a12 = as.matrix(f$t2);
-    #grad = rbind(a12,f$t3);
-    #A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
-    #hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-    if(counter > 1 && (-D < 0 || det(-A+B%*%D^(-1)%*%C) < 0)){
-      cat("Ude af maengden, step tilbage",counter)
-      for (runde in 3:33){
-        m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
-        x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
-        if(length(LassoRemoved)>1){
-          for(Remove in 1:length(LassoRemoved[-1])){
-            x <- x[-LassoRemoved[Remove+1],]
-            #   beta <- beta[-LassoRemoved[Remove+1]]
-            #cat("\nFjernet elementt nr. ", LassoRemoved[Remove+1],"\n","x dim: ",dim(x[1]),"\nbeta length: ",length(beta),"\n")
-          }
-        }
-        f <- BTFunktioner(x=x,Y=Y,r=r)
-        if (runde == 3) {
-          #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
-          t1 <- f$loglike(beta,theta,0,x)
-          t2 <- f$dlbeta(beta,theta,x,0)
-          t3 <- f$dltheta(beta,theta,x)
-          t4 <- f$dl2xtheta(beta,theta,x)
-          t5 <- f$dlbetatheta(beta,theta,x)
-          t6 <- f$dl2xbeta(beta,theta,x)
-        } else {
-          t1 <- t1 + f$loglike(beta,theta,0,x)
-          t2 <- t2 + f$dlbeta(beta,theta,x,0)
-          t3 <- t3 + f$dltheta(beta,theta,x)
-          t4 <- t4 + f$dl2xtheta(beta,theta,x)
-          t5 <- t5 + f$dlbetatheta(beta,theta,x)
-          t6 <- t6 + f$dl2xbeta(beta,theta,x)
-        }
-      }
-      f$t1 <- t1-lambda*sum(sqrt(beta^2+c^2));f$t2 <- t2-lambda*(beta/sqrt(beta^2+c^2));f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda*(c^2)/((beta^2+c^2)^(3/2));
-      a12 = as.matrix(f$t2);
-      grad = rbind(a12,f$t3);
-      A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
-      hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-      StepVector <- cbind(rep(0,400),1:400)
-      for(i in 1:400){
-        StepVector[i,1] <- sum(abs(ite-inv(inf)%*%grad*(1/i)));
-      }
-      StepHalv = -1/StepVector[which(StepVector[,1]==min(StepVector[,1])),2];
-      cat("\nStephalv",StepHalv,"\n")
-      temp = ite;
-      ite = ite + inv(inf)%*%grad*StepHalv; #NR STEP
-      val = sum(temp-ite);
-      for (i in length(ite):1){
-        if (abs(ite[i])<LambLimit ){
-          LassoRemoved <- cbind(LassoRemoved,i)
-          # beta <- beta[-i]
-          ite <- ite[-i]
-          x <- x[-i,]
-          cat("\nFjernet element nr. ",i,"\nlængde ite",length(ite),"\n")
-        }
-      }
-      counter = counter +1;
-      cat("\nVal",abs(val),"\ncounter",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
+#Tjekker om vi er i den rigtige maengde
+      if(iteration > 1 && (-D < 0 || det(-A+B%*%D^(-1)%*%C) < 0)){
+      cat("\nUde af maengden, vaelg nye initialiseringsvaerdier")
+      cat("\n logl :",f$loglike(beta,theta,lambda,x),"\n lambda :",lambda,"\n","Iterations: ", iteration,"\n")
+      styrker <- exp(t(x)%*%beta);names(styrker) <- names(Y)
+      KV <- inv(inf)
+      U <- sqrt(diag(KV))
+      names(beta) <- rownames(x)
+      Values = list("loglike" = f$t1,"beta" = beta, "theta" = theta,"KV"=KV,"styrker" = styrker,"styrkgemt"=styrkgemt,"Xgns"=Xgns,"sd" = U)
+      return(Values)
     } else {
       Xgns=0
-      for (runde in RoundList){
-        m <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+      styrkgemt = 0
+#Danner afledte til score og information
+     for (runde in RoundList){
+        m <- CreateMatrixes(data,StartDate,EndDate,runde,TRUE,Lambda = lambda,Variabler = Sbeta,alpha = alpha,model=model)
         x <- m$DesignMatrix;Y <- m$KontingensTabel; r <- m$SamledeKampe;
+#Tjekker om der er blevet fjernet nogle parametre i lasso
         if(length(LassoRemoved)>1){
           for(Remove in 1:length(LassoRemoved[-1])){
             x <- x[-LassoRemoved[Remove+1],]
-         #   beta <- beta[-LassoRemoved[Remove+1]]
-            #cat("\nFjernet elementt nr. ", LassoRemoved[Remove+1],"\n","x dim: ",dim(x[1]),"\nbeta length: ",length(beta),"\n")
           }
         }
         Xgns = Xgns + x
-        styrkgemt = styrkgemt+exp(t(x)%*%beta)
+        styrkgemt = styrkgemt+exp(t(x-x[,8])%*%beta)
         f <- BTFunktioner(x=x,Y=Y,r=r)
         if (runde == 3) {
-          #    funk <- list(f$loglike(beta,theta,x),f$dlbeta(beta,theta,x),f$dltheta(beta,theta,x),f$dl2xtheta(beta,theta,x),f$dlbetatheta(beta,theta,x))
           t1 <- f$loglike(beta,theta,0,x)
           t2 <- f$dlbeta(beta,theta,x,0)
           t3 <- f$dltheta(beta,theta,x)
@@ -336,23 +264,22 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,Max
           t6 <- t6 + f$dl2xbeta(beta,theta,x)
         }
       }
+#Opstiller observationen og scorefunktionen til Newton skridt
       f$t1 <- t1-lambda*sum(sqrt(beta^2+c^2));f$t2 <- t2-lambda*(beta/sqrt(beta^2+c^2));f$t3 <- t3;f$t4 <- t4;f$t5 <- t5;f$t6 <- t6-lambda*(c^2)/((beta^2+c^2)^(3/2));
       a12 = as.matrix(f$t2);
       grad = rbind(a12,f$t3);
       A = f$t6;B = as.matrix(f$t5);C = t(as.matrix(f$t5));D = f$t4;
       hess = cbind2(A,B);hess = rbind(hess,c(C,D));inf=-hess;
-      #StepVector <- cbind(rep(0,100),1:100);
-      #########FINDING STEPLENGTH####################
+#Finder skridtlaengden
       FoundStepLength = FALSE;StepHalv = 100; i = 0;testloglike = 0;
-      #while (FoundStepLength == FALSE && counter >= 1){
-        while(i < 100 & FoundStepLength == FALSE & counter >=1){
+        while(i < 100 & FoundStepLength == FALSE & iteration >=1){
           testloglike <- 0
           i = i+1
           iteTest = ite + inv(inf)%*%grad*(1/i)
           betaa <- c(iteTest[-length(iteTest)]);
           thetaa=iteTest[dim(x)[1]+1];
             for (runde in RoundList){
-            mm <- CreateMatrixes(data,"2015-07-17","2016-05-29",runde,TRUE)
+            mm <- CreateMatrixes(data,StartDate,EndDate,runde,TRUE,Lambda = lambda,Variabler = Sbeta,alpha=alpha,model=model)
             xx <- mm$DesignMatrix;YY <- mm$KontingensTabel; rr <- mm$SamledeKampe;
             if(length(LassoRemoved)>1){
               for(Remove in 1:length(LassoRemoved[-1])){
@@ -366,50 +293,56 @@ NR <- function(x,Beta,Theta,lambda=0,Sbeta,Stheta,RoundList,eps = 0.00000001,Max
                 testloglike <- testloglike + g$loglike(betaa,thetaa,0,xx)
               }
           }
-         # cat("\nNYLOGL: ",testloglike-lambda*sum(sqrt(betaa^2+c^2)),"\nGAMMEL LOGL: ",f$t1,"\n")
             if (f$t1 < testloglike -lambda*sum(sqrt(betaa^2+c^2))){
               StepHalv = i
               FoundStepLength = TRUE
-           #   cat("\nFoundStep",1/StepHalv,"\n")
             }
-       #   cat("\ni: ",i,"\n")
           }
-      #}
-#      StepHalv = 1/StepVector[which(StepVector[,1]==min(StepVector[,1])),2];
       cat("\nStephalv",1/StepHalv,"\n")
       temp = ite;
-      ite = ite + inv(inf)%*%grad*(1/StepHalv); #NR STEP
-      val = sum(temp-ite);
+#Udfoerer Newton-Raphson skridt
+      ite = ite + inv(inf)%*%grad*(1/StepHalv);
+      epsilon = sum(temp-ite);
+#Tjekker om der skal fjernes parametre
       for (i in length(ite):1){
-        #if (abs(ite[i])<LambLimit ){
-#          if (counter > 2 && lambda > 0 && (sign(ite[i])!=sign(temp[i]) || abs(ite[i]) < LambLimit)){
-        if (length(ite) > 2 && counter > 2 && lambda > 0 && ((abs(ite[i]) < LambLimit) || (sign(ite[i])!=sign(temp[i]) && abs(ite[i])<0.01))){
-      #  if (length(ite) > 2 && lambda > 0 && ((sign(ite[i])!=sign(temp[i]) || abs(ite[i])<LambLimit))){
+        if (length(ite) > 2 && iteration > 2 && lambda > 0 && ((abs(ite[i]) < LambLimit) || (sign(ite[i])!=sign(temp[i]) && abs(ite[i])<0.01))){
                    LassoRemoved <- cbind(LassoRemoved,i)
             # beta <- beta[-i]
             ite <- ite[-i]
             x <- x[-i,]
-            cat("\nFjernet element nr. ",i,"\nlængde ite",length(ite),"\n")
+            cat("\nFjernet element nr. ",i,"\nlaengde ite",length(ite),"\n")
           }
       }
       loglike = f$t1
-      counter = counter +1;
-      cat("\nVal",abs(val),"\ncounter",counter,"\n","Likelihood:",loglike,"\n Beta",beta,"\n theta",theta)
+      iteration = iteration +1;
+      cat("\nVal",abs(epsilon),"\niteration",iteration,"\n","Likelihood:",loglike,"\n Beta",beta,"\n theta",theta)
     }
-    if(counter > MaxIte){
-      cat("\n",counter,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
+    if(iteration > MaxIte){
+      cat("\n",iteration,"\n","Likelihood:",f$t1,"\n Beta",beta,"\n theta",theta)
       break
     }
   }
-
-  cat("\n logl :",f$loglike(beta,theta,lambda,x),"\n lambda :",lambda,"\n","Iterations: ", counter,"\n")
+  #Tjekker om de har skiftet fortegn ved konvergering
+  Sbeta <- Sbeta[which(names(Sbeta)%in%names(beta))]
+  for (i in length(ite):1){
+    if (length(ite) > 2 && missing(Sbeta) == FALSE &&lambda > 0 && ((abs(ite[i]) < LambLimit) || (sign(ite[i])!=sign(temp[i]) && abs(ite[i])<0.01))|| (sign(ite[i]!=sign(Sbeta[i])))){
+      LassoRemoved <- cbind(LassoRemoved,i)
+      # beta <- beta[-i]
+      ite <- ite[-i]
+      x <- x[-i,]
+      cat("\nFjernet element nr. ",i,"\nlaengde ite",length(ite),"\n")
+    }
+  }
+#Newton-Raphson konvergering slut, returner vaerdier
+  cat("\n logl :",f$t1,"\n lambda :",lambda,"\n","Iterations: ", iteration,"\n")
   styrker <- exp(t(x)%*%beta);names(styrker) <- names(Y)
   KV <- inv(inf)
   U <- sqrt(diag(KV))
   names(beta) <- rownames(x)
-  Values = list("beta" = beta, "theta" = theta,"KV"=KV,"styrker" = styrker,"styrkgemt"=styrkgemt,"Xgns"=Xgns,"sd" = U)
+  Values = list("loglike" = f$t1,"beta" = beta, "theta" = theta,"KV"=KV,"styrker" = styrker,"styrkgemt"=styrkgemt,"Xgns"=Xgns,"sd" = U)
   return(Values)
 }
+#Danner sandsynligheder for hold i mod hold j, med given designmatrix
 Sandsynligheder <- function(theta,x,styrker,i,j){
   VTU=0;
   VTU = c((styrker[i])/(styrker[i]+theta*styrker[j]),
@@ -418,3 +351,5 @@ Sandsynligheder <- function(theta,x,styrker,i,j){
   )
   return(VTU)
 }
+
+
